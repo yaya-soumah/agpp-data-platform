@@ -1,0 +1,7 @@
+Status
+
+Context
+
+Decision
+
+Consequences
