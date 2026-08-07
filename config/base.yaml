@@ -2,6 +2,9 @@ application:
   name: AGPP Data Platform
   version: 0.1.0
 
+environment:
+  timezone: UTC
+
 pipeline:
   batch_size: 1000
   retry_attempts: 3
@@ -21,3 +24,7 @@ paths:
   raw_data: data/raw
   processed_data: data/processed
   archive_data: data/archive
+
+features:
+  enable_metrics: false
+  enable_profiling: false
