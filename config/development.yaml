@@ -1,0 +1,8 @@
+logging:
+  level: DEBUG
+
+database:
+  pool_size: 5
+
+pipeline:
+  retry_attempts: 1
