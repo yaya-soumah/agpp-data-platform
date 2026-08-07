@@ -1,0 +1,23 @@
+application:
+  name: AGPP Data Platform
+  version: 0.1.0
+
+pipeline:
+  batch_size: 1000
+  retry_attempts: 3
+
+warehouse:
+  schema: analytics
+
+database:
+  port: 5432
+  pool_size: 10
+  connection_timeout: 30
+
+logging:
+  level: INFO
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  archive_data: data/archive
