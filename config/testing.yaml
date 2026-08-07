@@ -1,0 +1,8 @@
+logging:
+  level: WARNING
+
+pipeline:
+  batch_size: 100
+
+database:
+  pool_size: 2
