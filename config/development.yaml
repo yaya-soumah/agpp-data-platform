@@ -1,6 +1,3 @@
-logging:
-  level: DEBUG
-
 database:
   pool_size: 5
 
