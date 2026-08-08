@@ -1,0 +1,9 @@
+logging:
+  level: INFO
+
+database:
+  pool_size: 25
+
+pipeline:
+  batch_size: 5000
+  retry_attempts: 5
