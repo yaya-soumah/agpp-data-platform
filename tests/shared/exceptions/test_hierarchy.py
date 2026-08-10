@@ -6,7 +6,7 @@ from src.shared.exceptions import (
     ValidationError,
     InfrastructureError,
     ConfigurationError,
-    ExtractionError,
+    DataExtractionError,
     LoadingError,
 )
 
@@ -17,7 +17,7 @@ from src.shared.exceptions import (
         ValidationError,
         InfrastructureError,
         ConfigurationError,
-        ExtractionError,
+        DataExtractionError,
         LoadingError,
     ]
 )
@@ -87,7 +87,7 @@ def test_context_is_independent_from_source_dictionary():
     error = ValidationError(
         "Invalid supplier ID",
         error_code='VALIDATION_INVALID_SUPPLIER',
-        context={"supplier_id": 1847},
+        context=context,
     )
 
     assert error.context is not context
