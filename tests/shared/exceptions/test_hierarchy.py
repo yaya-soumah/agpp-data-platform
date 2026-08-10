@@ -40,3 +40,19 @@ def test_specialized_exception_preserves_base_contract():
     assert error.error_code == 'VALIDATION_INVALID_SUPPLIER'    
     assert error.context == {"supplier_id": "1847"}
     assert error.retryable is False
+
+def test_exception_chaining_preserves_original_exception():
+    original_exception = RuntimeError("Database connection failed")
+
+    try:
+        try:
+            raise original_exception
+        except RuntimeError as exc:
+            raise LoadingError("Failed to load data",
+                                error_code='LOADING_ERROR',
+                                context={"file": "data.csv"},
+                                retryable=True) from exc
+    except LoadingError as error:        
+        assert isinstance(error, AGPPException)
+        assert error.__cause__ is original_exception
+        assert str(error.__cause__) == "Database connection failed"    
