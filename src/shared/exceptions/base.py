@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 class AGPPException(Exception):
     """Base class for all AGPP platform-specific exceptions."""
@@ -8,11 +8,11 @@ class AGPPException(Exception):
             message: str, 
             *,
             error_code: str, 
-            context: Dict[str, Any] | None = None,
+            context: dict[str, Any] | None = None,
             retryable: bool = False
             ) -> None:
         super().__init__(message)
         self.message = message
         self.error_code = error_code
-        self.context = context or {}
+        self.context = dict(context) if context is not None else {}
         self.retryable = retryable
