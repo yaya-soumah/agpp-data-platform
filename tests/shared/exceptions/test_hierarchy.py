@@ -80,3 +80,14 @@ def test_error_code_is_machine_readable_identifier() :
     assert error.error_code == 'VALIDATION_INVALID_CURRENCY'
     assert error.message == "Supplier currency is invalid"
     assert error.error_code != error.message  # Ensure error_code is distinct from message
+
+def test_context_is_independent_from_source_dictionary():
+    context = {"supplier_id": 1847}
+
+    error = ValidationError(
+        "Invalid supplier ID",
+        error_code='VALIDATION_INVALID_SUPPLIER',
+        context={"supplier_id": 1847},
+    )
+
+    assert error.context is not context
