@@ -3,7 +3,7 @@ from .transformation import TransformationError
 from .validation import ValidationError 
 from .infrastructure import InfrastructureError
 from .configuration import ConfigurationError
-from .extraction import ExtractionError
+from .extraction import DataExtractionError
 from .loading import LoadingError
 
 __all__ = [
@@ -12,6 +12,6 @@ __all__ = [
     ValidationError,
     "InfrastructureError",
     "ConfigurationError",
-    "ExtractionError",
+    "DataExtractionError",
     "LoadingError"
 ]
