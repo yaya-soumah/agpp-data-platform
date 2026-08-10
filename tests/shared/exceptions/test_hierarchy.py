@@ -56,3 +56,18 @@ def test_exception_chaining_preserves_original_exception():
         assert isinstance(error, AGPPException)
         assert error.__cause__ is original_exception
         assert str(error.__cause__) == "Database connection failed"    
+
+def test_exception_chaining_is_explicit():
+    original = RuntimeError("connection failed")
+
+    try:
+        try:
+            raise original
+        except RuntimeError as exc:
+            raise LoadingError("Failed to load data",
+                                error_code='LOADING_ERROR',  
+            ) from exc 
+    except LoadingError as error:
+        assert error.__cause__ is original
+        assert error.__suppress_context__ is True
+        
