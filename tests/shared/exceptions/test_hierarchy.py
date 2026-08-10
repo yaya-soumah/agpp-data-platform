@@ -70,4 +70,13 @@ def test_exception_chaining_is_explicit():
     except LoadingError as error:
         assert error.__cause__ is original
         assert error.__suppress_context__ is True
-        
+
+def test_error_code_is_machine_readable_identifier() :
+    error = ValidationError(
+        "Supplier currency is invalid",
+        error_code='VALIDATION_INVALID_CURRENCY',
+    )
+
+    assert error.error_code == 'VALIDATION_INVALID_CURRENCY'
+    assert error.message == "Supplier currency is invalid"
+    assert error.error_code != error.message  # Ensure error_code is distinct from message
