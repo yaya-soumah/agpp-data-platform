@@ -9,10 +9,10 @@ class AGPPException(Exception):
             *,
             error_code: str, 
             context: Dict[str, Any] | None = None,
-            recyclable: bool = False
+            retryable: bool = False
             ) -> None:
         super().__init__(message)
         self.message = message
         self.error_code = error_code
         self.context = context or {}
-        self.recyclable = recyclable
+        self.retryable = retryable
