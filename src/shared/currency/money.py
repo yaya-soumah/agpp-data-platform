@@ -22,7 +22,7 @@ class InvalidExchangeRateError(MoneyError):
 
 @dataclass(frozen=True, slots=True)
 class Money:
-    """Immutable monetary value consisting og an amount and currency."""
+    """Immutable monetary value consisting of an amount and currency."""
 
     amount: Decimal
     currency: Currency
