@@ -9,7 +9,7 @@ from .loading import LoadingError
 __all__ = [
     "AGPPException",
     "TransformationError",
-    ValidationError,
+    "ValidationError",
     "InfrastructureError",
     "ConfigurationError",
     "DataExtractionError",
