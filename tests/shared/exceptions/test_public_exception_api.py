@@ -3,7 +3,7 @@ from src.shared.exceptions import (AGPPException,
                                    ValidationError,
                                    InfrastructureError,     
                                  ConfigurationError,
-                                    ExtractionError,
+                                    DataExtractionError,
                                       LoadingError
                                    )
 
@@ -13,5 +13,5 @@ def test_public_exception_api():
     assert ValidationError is not None
     assert InfrastructureError is not None
     assert ConfigurationError is not None
-    assert ExtractionError is not None
+    assert DataExtractionError is not None
     assert LoadingError is not None 
