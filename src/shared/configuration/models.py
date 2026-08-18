@@ -35,7 +35,11 @@ class PipelineConfig(ConfigurationModel):
 class WarehouseConfig(ConfigurationModel):
     """Analytical warehouse configuration."""
 
+<<<<<<< HEAD
     schema: str = Field(min_length=1)
+=======
+    warehouse_schema: str = Field(min_length=1, alias="schema")
+>>>>>>> d6ddbfbdf2990f4a9c6f383b579b8874ad907da4
 
 class DatabaseConfig(ConfigurationModel):
     """Database connection and pool configuration."""
