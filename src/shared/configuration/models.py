@@ -35,7 +35,7 @@ class PipelineConfig(ConfigurationModel):
 class WarehouseConfig(ConfigurationModel):
     """Analytical warehouse configuration."""
 
-    schema: str = Field(min_length=1)
+    warehouse_schema: str = Field(min_length=1, alias="schema")
 
 class DatabaseConfig(ConfigurationModel):
     """Database connection and pool configuration."""
