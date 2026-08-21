@@ -15,7 +15,7 @@ class SupplierProduct(BaseModel):
     supplier_id: str = Field(min_length=1)
     supplier_sku: str | None = None
     name: str = Field(min_length=1)
-    description: setattr | None = None
+    description: str | None = None
     price: Money | None = None
     minimum_order_quantity: Decimal | None = Field(default=None, gt=0)
-    lead_time_days: int | None = Field(default=None, gt=0)
+    lead_time_days: int | None = Field(default=None, ge=0)
