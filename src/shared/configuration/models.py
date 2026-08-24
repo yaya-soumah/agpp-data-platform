@@ -1,17 +1,14 @@
-from enum import Enum
-from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from .environment import Environment
+
 
 class ConfigurationModel(BaseModel):
     """Base model for all AGPP configuration models"""
 
-    model_config = ConfigDict(
-        extra='forbid',
-        frozen=True,
-        strict=True
-    )
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
 
 class ApplicationConfig(ConfigurationModel):
@@ -19,6 +16,7 @@ class ApplicationConfig(ConfigurationModel):
 
     name: str = Field(min_length=1)
     version: str = Field(min_length=1)
+
 
 class EnvironmentConfig(ConfigurationModel):
     """Runtime environment configuration."""
@@ -32,30 +30,35 @@ class PipelineConfig(ConfigurationModel):
     batch_size: int = Field(gt=0)
     retry_attempts: int = Field(ge=0)
 
+
 class WarehouseConfig(ConfigurationModel):
     """Analytical warehouse configuration."""
 
     warehouse_schema: str = Field(min_length=1, alias="schema")
 
+
 class DatabaseConfig(ConfigurationModel):
     """Database connection and pool configuration."""
 
-    port: int = Field(ge=1,le=65535)
+    port: int = Field(ge=1, le=65535)
     pool_size: int = Field(gt=0)
     connection_timeout: int = Field(gt=0)
+
 
 class PathsConfig(ConfigurationModel):
     """Application data path configuration."""
 
-    raw_data: str =Field(min_length=1)
+    raw_data: str = Field(min_length=1)
     processed_data: str = Field(min_length=1)
     archive_data: str = Field(min_length=1)
+
 
 class FeaturesConfig(ConfigurationModel):
     """Application feature flags."""
 
     enable_metrics: bool
     enable_profiling: bool
+
 
 class AppConfig(ConfigurationModel):
     """Complete validated application configuration"""
@@ -69,6 +72,7 @@ class AppConfig(ConfigurationModel):
     paths: PathsConfig
     features: FeaturesConfig
 
+
 class LoggingFormatConfig(ConfigurationModel):
     """Logging format configuration."""
 
@@ -80,11 +84,13 @@ class ConsoleHandlerConfig(ConfigurationModel):
 
     enabled: bool
 
+
 class FileHandlerConfig(ConfigurationModel):
     """File logging handler configuration."""
 
     enabled: bool
     path: str = Field(min_length=1)
+
 
 class LoggingHandlersConfig(ConfigurationModel):
     """Logging handlers configuration."""
@@ -96,7 +102,10 @@ class LoggingHandlersConfig(ConfigurationModel):
 class LoggingEnvironmentLevelConfig(ConfigurationModel):
     """Environment-specific logging levels."""
 
-    level: Literal["DEBUG","WARNING","INFO","ERROR","CRITICAL"] = Field(min_length=1, description="Logging level")
+    level: Literal["DEBUG", "WARNING", "INFO", "ERROR", "CRITICAL"] = Field(
+        min_length=1, description="Logging level"
+    )
+
 
 class LoggingConfig(ConfigurationModel):
     """Complete validated logging configuration."""
@@ -107,5 +116,3 @@ class LoggingConfig(ConfigurationModel):
     development: LoggingEnvironmentLevelConfig
     testing: LoggingEnvironmentLevelConfig
     production: LoggingEnvironmentLevelConfig
-
-

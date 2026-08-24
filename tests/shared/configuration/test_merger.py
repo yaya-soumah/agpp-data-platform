@@ -1,18 +1,14 @@
 from src.shared.configuration.merger import deep_merge
 
+
 def test_deep_merge_preserves_base_values():
     base = {
-        "database": {
-            "port": 5432,
-            "pool_size": 10,
-            "connection_timeout": 30
-        },
+        "database": {"port": 5432, "pool_size": 10, "connection_timeout": 30},
     }
 
     override = {
         "database": {
             "pool_size": 5,
-
         }
     }
 
@@ -20,12 +16,9 @@ def test_deep_merge_preserves_base_values():
 
     assert isinstance(result, dict)
     assert result == {
-        "database": {
-            "port": 5432,
-            "pool_size": 5,
-            "connection_timeout": 30
-        },
+        "database": {"port": 5432, "pool_size": 5, "connection_timeout": 30},
     }
+
 
 def test_override_replaces_scalar_value():
     base = {
@@ -162,4 +155,3 @@ def test_result_is_independent_from_inputs():
 
     assert base["database"]["pool_size"] == 10
     assert override["pipeline"]["batch_size"] == 1000
-

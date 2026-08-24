@@ -1,9 +1,9 @@
 from .currency import Currency
 from .money import (
     CurrencyMismatchError,
+    InvalidExchangeRateError,
     InvalidMoneyAmountError,
     Money,
-    InvalidExchangeRateError,
     MoneyError,
 )
 
@@ -13,5 +13,5 @@ __all__ = [
     "InvalidMoneyAmountError",
     "Money",
     "InvalidExchangeRateError",
-    "MoneyError"
+    "MoneyError",
 ]

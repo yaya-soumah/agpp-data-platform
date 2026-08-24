@@ -1,13 +1,10 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, AnyUrl,Field
+from pydantic import AnyUrl, BaseModel, ConfigDict, EmailStr, Field
+
 
 class Supplier(BaseModel):
-
     """Business entity representing a supplier."""
 
-    model_config = ConfigDict(
-        extra="forbid",
-        validate_assignment=True
-    )
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     supplier_id: str = Field(min_length=1)
     name: str = Field(min_length=1)

@@ -2,10 +2,8 @@ from collections.abc import Sequence
 
 from src.models.supplier_product import SupplierProduct
 from src.pipelines.supplier_product.extractor import SupplierProductExtractor
-from src.pipelines.supplier_product.loader import (LoadResult,
-                                                   SupplierProductLoader)
-from src.pipelines.supplier_product.transformer import \
-    SupplierProductTransformer
+from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
+from src.pipelines.supplier_product.transformer import SupplierProductTransformer
 from src.pipelines.supplier_product.validator import SupplierProductValidator
 
 
@@ -13,27 +11,25 @@ class SupplierProductPipelineService:
     """Coordinate the supplier product pipeline lifecycle."""
 
     def __init__(
-            self,
-            extractor: SupplierProductExtractor,
-            validator: SupplierProductValidator,
-            transformer: SupplierProductTransformer,
-            loader: SupplierProductLoader,
+        self,
+        extractor: SupplierProductExtractor,
+        validator: SupplierProductValidator,
+        transformer: SupplierProductTransformer,
+        loader: SupplierProductLoader,
     ) -> None:
         self._extractor = extractor
         self._validator = validator
         self._transformer = transformer
         self._loader = loader
 
-    def run(self) ->LoadResult:
-        """Execute the Supplier Product pipeline. """
+    def run(self) -> LoadResult:
+        """Execute the Supplier Product pipeline."""
 
         extracted_records = self._extractor.extract()
-        validated_records = self._validator.validate(
-            extracted_records
-        )
+        validated_records = self._validator.validate(extracted_records)
 
-        products: Sequence[SupplierProduct] = (
-            self._transformer.transform(validated_records)
+        products: Sequence[SupplierProduct] = self._transformer.transform(
+            validated_records
         )
 
         return self._loader.load(products)

@@ -1,8 +1,6 @@
 import logging
 
 import pytest
-from pydantic import ValidationError
-
 from src.shared.configuration.environment import Environment
 from src.shared.configuration.models import (
     LoggingConfig,
@@ -20,10 +18,7 @@ def logging_config(tmp_path) -> LoggingConfig:
         {
             "version": 1,
             "format": {
-                "standard": (
-                    "%(asctime)s | %(levelname)s | "
-                    "%(name)s | %(message)s"
-                ),
+                "standard": ("%(asctime)s | %(levelname)s | %(name)s | %(message)s"),
             },
             "handlers": {
                 "console": {
@@ -31,9 +26,7 @@ def logging_config(tmp_path) -> LoggingConfig:
                 },
                 "file": {
                     "enabled": True,
-                    "path": str(
-                        tmp_path / "logs" / "agpp.log"
-                    ),
+                    "path": str(tmp_path / "logs" / "agpp.log"),
                 },
             },
             "development": {
@@ -80,6 +73,7 @@ def test_development_uses_debug_level(logging_config):
 
     assert logger.level == logging.DEBUG
 
+
 def test_testing_uses_warning_level(logging_config):
     configure_logging(
         logging_config,
@@ -90,6 +84,7 @@ def test_testing_uses_warning_level(logging_config):
 
     assert logger.level == logging.WARNING
 
+
 def test_production_uses_info_level(logging_config):
     configure_logging(
         logging_config,
@@ -99,6 +94,7 @@ def test_production_uses_info_level(logging_config):
     logger = logging.getLogger(AGPP_LOGGER_NAME)
 
     assert logger.level == logging.INFO
+
 
 def test_enabled_console_handler_is_created(logging_config):
     configure_logging(
@@ -116,6 +112,7 @@ def test_enabled_console_handler_is_created(logging_config):
     ]
 
     assert len(console_handlers) == 1
+
 
 def test_enabled_file_handler_is_created(
     logging_config,
@@ -135,9 +132,8 @@ def test_enabled_file_handler_is_created(
     ]
 
     assert len(file_handlers) == 1
-    assert (
-        tmp_path / "logs" / "agpp.log"
-    ).exists()
+    assert (tmp_path / "logs" / "agpp.log").exists()
+
 
 def test_disabled_console_handler_is_not_created(
     logging_config,
@@ -170,6 +166,7 @@ def test_disabled_console_handler_is_not_created(
 
     assert console_handlers == []
 
+
 def test_disabled_file_handler_is_not_created(
     logging_config,
 ):
@@ -200,6 +197,7 @@ def test_disabled_file_handler_is_not_created(
 
     assert file_handlers == []
 
+
 def test_configured_formatter_is_applied(
     logging_config,
 ):
@@ -214,10 +212,8 @@ def test_configured_formatter_is_applied(
 
     for handler in logger.handlers:
         assert handler.formatter is not None
-        assert (
-            handler.formatter._fmt
-            == logging_config.format.standard
-        )
+        assert handler.formatter._fmt == logging_config.format.standard
+
 
 def test_agpp_logger_does_not_propagate(
     logging_config,
@@ -230,6 +226,7 @@ def test_agpp_logger_does_not_propagate(
     logger = logging.getLogger(AGPP_LOGGER_NAME)
 
     assert logger.propagate is False
+
 
 def test_configure_logging_is_idempotent(
     logging_config,
@@ -264,6 +261,7 @@ def test_configure_logging_is_idempotent(
     assert len(file_handlers) == 1
     assert len(console_handlers) == 1
 
+
 def test_file_handler_failure_becomes_infrastructure_error(
     logging_config,
     monkeypatch,
@@ -282,10 +280,7 @@ def test_file_handler_failure_becomes_infrastructure_error(
             Environment.DEVELOPMENT,
         )
 
-    assert (
-        exc.value.error_code
-        == "LOGGING_FILE_HANDLER_INITIALIZATION_FAILED"
-    )
+    assert exc.value.error_code == "LOGGING_FILE_HANDLER_INITIALIZATION_FAILED"
 
     assert isinstance(
         exc.value.__cause__,

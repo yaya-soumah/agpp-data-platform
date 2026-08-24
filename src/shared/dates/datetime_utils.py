@@ -1,29 +1,37 @@
 from __future__ import annotations
 
-from datetime import datetime, date, timezone
+from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
 
 class DateTimeError(ValueError):
     """Base exception for date/time utility errors."""
+
     pass
+
 
 class NaiveDateTimeError(DateTimeError):
     """Raised when a timezone-aware datetime is required."""
-    pass 
+
+    pass
+
 
 class InvalidTimeZoneError(DateTimeError):
     """Raised when a timezone cannot be resolved."""
+
     pass
 
+
 def utc_now() -> datetime:
-    """"
+    """ "
     Return the current timezone-aware UTC datetime.
     """
 
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
+
 
 def ensure_aware(value: datetime) -> datetime:
-    """"
+    """ "
     Validate that a datetime is timezone-aware.
     """
 
@@ -31,17 +39,19 @@ def ensure_aware(value: datetime) -> datetime:
         raise NaiveDateTimeError("A timezone-aware datetime is required.")
     return value
 
+
 def to_utc(value: datetime) -> datetime:
-    """"
+    """ "
     Convert a timezone-aware datetime to UTC.
     """
 
     value = ensure_aware(value)
 
-    return value.astimezone(timezone.utc)
+    return value.astimezone(UTC)
+
 
 def timezone_from_name(name: str) -> ZoneInfo:
-    """"
+    """ "
     Resolve an IANA timezone name.
     """
 
@@ -50,11 +60,12 @@ def timezone_from_name(name: str) -> ZoneInfo:
     except ZoneInfoNotFoundError as exc:
         raise InvalidTimeZoneError(f"Unknown IANA timezone: {name!r}") from exc
 
+
 def convert_timezone(
-        value: datetime,
-        timezone_name: str,
-    ) -> datetime:
-    """"
+    value: datetime,
+    timezone_name: str,
+) -> datetime:
+    """ "
     Convert a timezone-aware datetime to the requested IANA timezone
     """
 
@@ -63,16 +74,18 @@ def convert_timezone(
 
     return value.astimezone(target_timezone)
 
+
 def ensure_utc(value: datetime) -> datetime:
     """
     Validate that a datetime is timezone-aware and normalized to UTC."""
 
     normalized = to_utc(value)
 
-    if normalized.tzinfo != timezone.utc:
+    if normalized.tzinfo != UTC:
         raise DateTimeError("Datetime could not be normalized to UTC.")
 
     return normalized
+
 
 def is_date(value: object) -> bool:
     """

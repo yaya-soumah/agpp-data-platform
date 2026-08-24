@@ -1,9 +1,11 @@
-from pydantic import BaseModel,Field, ConfigDict
 from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from src.shared.currency import Money
 
-class SupplierProduct(BaseModel):
 
+class SupplierProduct(BaseModel):
     """Business entity representing a product offered by a supplier."""
 
     model_config = ConfigDict(
