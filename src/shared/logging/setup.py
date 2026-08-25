@@ -5,8 +5,15 @@ from src.shared.configuration.environment import Environment
 from src.shared.configuration.models import LoggingConfig
 from src.shared.exceptions import InfrastructureError
 
-
 AGPP_LOGGER_NAME = "agpp"
+
+_LOG_LEVELS: dict[str, int] = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
 
 
 def _resolve_log_level(
@@ -17,18 +24,13 @@ def _resolve_log_level(
 
     environment_config = getattr(config, environment.value)
 
-    return getattr(
-        logging,
-        environment_config.level,
-    )
+    return _LOG_LEVELS[environment_config.level]
 
 
 def _create_formatter(config: LoggingConfig) -> logging.Formatter:
     """Create a logging formatter from validated configuration."""
 
-    return logging.Formatter(
-        config.format.standard
-    )
+    return logging.Formatter(config.format.standard)
 
 
 def _create_file_handler(

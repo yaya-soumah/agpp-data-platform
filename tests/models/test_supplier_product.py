@@ -2,7 +2,6 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-
 from src.models import SupplierProduct
 from src.shared.currency import Currency, Money
 
@@ -42,10 +41,7 @@ def test_supplier_product_accepts_optional_fields() -> None:
     )
 
     assert supplier_product.supplier_sku == "ABC-500"
-    assert (
-        supplier_product.description
-        == "Vacuum insulated stainless steel bottle"
-    )
+    assert supplier_product.description == "Vacuum insulated stainless steel bottle"
     assert supplier_product.price == price
     assert supplier_product.price.amount == Decimal("8.50")
     assert supplier_product.price.currency == Currency.USD
@@ -194,6 +190,7 @@ def test_supplier_product_allows_valid_assignment() -> None:
     supplier_product.name = "Updated Product"
 
     assert supplier_product.name == "Updated Product"
+
 
 def test_supplier_product_preserves_money_value_object() -> None:
     price = Money(
