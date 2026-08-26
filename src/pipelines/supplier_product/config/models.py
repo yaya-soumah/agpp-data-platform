@@ -12,7 +12,7 @@ class SupplierProductSourceType(StrEnum):
 class SupplierProductConfigModel(BaseModel):
     """Base model for all SUpplier Product pipeline configuration models"""
 
-    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class SupplierProductSourceConfig(SupplierProductConfigModel):

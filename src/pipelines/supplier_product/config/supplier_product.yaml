@@ -1,0 +1,10 @@
+sources:
+  - name: supplier_master
+    type: csv
+    path: supplier_master.csv
+
+  - name: supplier_products
+    type: csv
+    path: supplier_products.csv
+validation:
+  reject_invalid_rows: true

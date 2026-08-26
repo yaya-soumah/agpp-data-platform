@@ -4,10 +4,12 @@ from .models import (
     SupplierProductSourceType,
     SupplierProductValidationConfig,
 )
+from .supplier_production_service import SupplierProductService
 
 __all__ = [
     "SupplierProductValidationConfig",
     "SupplierProductSourceConfig",
     "SupplierProductSourceType",
     "SupplierProductConfig",
+    "SupplierProductService",
 ]
