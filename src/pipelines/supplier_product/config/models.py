@@ -32,6 +32,16 @@ class SupplierProductSourceConfig(SupplierProductConfigModel):
             )
         return value
 
+    @field_validator("path")
+    @classmethod
+    def validate_relative_path(cls, value: Path) -> Path:
+        if value.is_absolute():
+            raise ConfigurationError(
+                "source path must be relative to the raw data directory.",
+                error_code="CONFIG_SOURCE_PATH_MUST_BE_RELATIVE",
+            )
+        return value
+
 
 class SupplierProductValidationConfig(SupplierProductConfigModel):
     """Validation Configuration model"""

@@ -5,6 +5,7 @@ description = "Production-grade data engineering platform for global trade analy
 requires-python = ">=3.12"
 
 dependencies = [
+    "polars-lts-cpu>=1.33.1",
     "pydantic",
     "pyyaml",
 ]

@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from src.models.supplier_product import SupplierProduct
-from src.pipelines.supplier_product.extractor import SupplierProductExtractor
+from src.pipelines.supplier_product.extractors.base import SupplierProductExtractor
 from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
 from src.pipelines.supplier_product.transformer import SupplierProductTransformer
 from src.pipelines.supplier_product.validator import SupplierProductValidator

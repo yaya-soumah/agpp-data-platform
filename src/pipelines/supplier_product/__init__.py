@@ -1,4 +1,5 @@
-from src.pipelines.supplier_product.extractor import SupplierProductExtractor
+from src.pipelines.supplier_product.extractors.base import SupplierProductExtractor
+from src.pipelines.supplier_product.extractors.csv import CSVExtractor
 from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
 from src.pipelines.supplier_product.models import (
     SupplierProductRecord,
@@ -16,5 +17,6 @@ __all__ = [
     "SupplierProductLoader",
     "SupplierProductPipelineService",
     "SupplierProductRecord",
+    "CSVExtractor",
     "ValidateSupplierProductRecord",
 ]
