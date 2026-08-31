@@ -43,7 +43,7 @@ def logging_config(tmp_path) -> LoggingConfig:
 
 
 @pytest.fixture(autouse=True)
-def clean_agpp_logger():
+def clean_agpp_logger() -> None:
     logger = logging.getLogger(AGPP_LOGGER_NAME)
 
     for handler in logger.handlers[:]:
@@ -63,7 +63,7 @@ def clean_agpp_logger():
     logger.propagate = True
 
 
-def test_development_uses_debug_level(logging_config):
+def test_development_uses_debug_level(logging_config) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -74,7 +74,7 @@ def test_development_uses_debug_level(logging_config):
     assert logger.level == logging.DEBUG
 
 
-def test_testing_uses_warning_level(logging_config):
+def test_testing_uses_warning_level(logging_config) -> None:
     configure_logging(
         logging_config,
         Environment.TESTING,
@@ -85,7 +85,7 @@ def test_testing_uses_warning_level(logging_config):
     assert logger.level == logging.WARNING
 
 
-def test_production_uses_info_level(logging_config):
+def test_production_uses_info_level(logging_config) -> None:
     configure_logging(
         logging_config,
         Environment.PRODUCTION,
@@ -96,7 +96,7 @@ def test_production_uses_info_level(logging_config):
     assert logger.level == logging.INFO
 
 
-def test_enabled_console_handler_is_created(logging_config):
+def test_enabled_console_handler_is_created(logging_config) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -117,7 +117,7 @@ def test_enabled_console_handler_is_created(logging_config):
 def test_enabled_file_handler_is_created(
     logging_config,
     tmp_path,
-):
+) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -137,7 +137,7 @@ def test_enabled_file_handler_is_created(
 
 def test_disabled_console_handler_is_not_created(
     logging_config,
-):
+) -> None:
     config = logging_config.model_copy(
         update={
             "handlers": logging_config.handlers.model_copy(
@@ -169,7 +169,7 @@ def test_disabled_console_handler_is_not_created(
 
 def test_disabled_file_handler_is_not_created(
     logging_config,
-):
+) -> None:
     config = logging_config.model_copy(
         update={
             "handlers": logging_config.handlers.model_copy(
@@ -200,7 +200,7 @@ def test_disabled_file_handler_is_not_created(
 
 def test_configured_formatter_is_applied(
     logging_config,
-):
+) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -217,7 +217,7 @@ def test_configured_formatter_is_applied(
 
 def test_agpp_logger_does_not_propagate(
     logging_config,
-):
+) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -230,7 +230,7 @@ def test_agpp_logger_does_not_propagate(
 
 def test_configure_logging_is_idempotent(
     logging_config,
-):
+) -> None:
     configure_logging(
         logging_config,
         Environment.DEVELOPMENT,
@@ -265,7 +265,7 @@ def test_configure_logging_is_idempotent(
 def test_file_handler_failure_becomes_infrastructure_error(
     logging_config,
     monkeypatch,
-):
+) -> None:
     def fail_mkdir(*args, **kwargs):
         raise OSError("permission denied")
 

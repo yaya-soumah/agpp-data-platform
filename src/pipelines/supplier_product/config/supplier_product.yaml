@@ -6,5 +6,13 @@ sources:
   - name: supplier_products
     type: csv
     path: supplier_products.csv
+
+  - name: supplier_product_api
+    type: api
+    url: https://example.com/supplier_products
+
+  - name: supplier_product_ftp
+    type: ftp
+    
 validation:
   reject_invalid_rows: true

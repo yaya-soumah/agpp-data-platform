@@ -42,7 +42,7 @@ def test_service_raises_when_config_file_is_missing(
     with pytest.raises(ConfigurationError) as exc:
         service.get_config()
 
-    assert exc.value.error_code == "CONFIG_PIPELINE_FILE_NOT_FOUND"
+    assert exc.value.error_code == "CONFIG_SUPPLIER_PRODUCT_CONFIG_FILE_NOT_FOUND"
 
 
 def test_service_rejects_invalid_configuration(
@@ -64,7 +64,7 @@ sources:
     with pytest.raises(ConfigurationError) as exc:
         service.get_config()
 
-    assert exc.value.error_code == "CONFIG_PIPELINE_INVALID"
+    assert exc.value.error_code == "CONFIG_SUPPLIER_PRODUCT_CONFIGURATION_INVALID"
 
 
 def test_service_caches_configuration(tmp_path: Path) -> None:

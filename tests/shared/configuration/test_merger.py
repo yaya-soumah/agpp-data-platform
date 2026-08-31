@@ -1,7 +1,7 @@
 from src.shared.configuration.merger import deep_merge
 
 
-def test_deep_merge_preserves_base_values():
+def test_deep_merge_preserves_base_values() -> None:
     base = {
         "database": {"port": 5432, "pool_size": 10, "connection_timeout": 30},
     }
@@ -20,7 +20,7 @@ def test_deep_merge_preserves_base_values():
     }
 
 
-def test_override_replaces_scalar_value():
+def test_override_replaces_scalar_value() -> None:
     base = {
         "pipeline": {
             "batch_size": 1000,
@@ -38,7 +38,7 @@ def test_override_replaces_scalar_value():
     assert result["pipeline"]["batch_size"] == 5000
 
 
-def test_nested_values_are_merged_recursively():
+def test_nested_values_are_merged_recursively() -> None:
     base = {
         "database": {
             "connection": {
@@ -68,7 +68,7 @@ def test_nested_values_are_merged_recursively():
     }
 
 
-def test_override_mapping_can_replace_scalar():
+def test_override_mapping_can_replace_scalar() -> None:
     base = {
         "database": {
             "pool_size": 10,
@@ -86,7 +86,7 @@ def test_override_mapping_can_replace_scalar():
     }
 
 
-def test_lists_are_replaced():
+def test_lists_are_replaced() -> None:
     base = {
         "regions": ["EU", "ASIA"],
     }
@@ -102,7 +102,7 @@ def test_lists_are_replaced():
     }
 
 
-def test_inputs_are_not_mutated():
+def test_inputs_are_not_mutated() -> None:
     base = {
         "database": {
             "port": 5432,
@@ -135,7 +135,7 @@ def test_inputs_are_not_mutated():
     assert override == override_before
 
 
-def test_result_is_independent_from_inputs():
+def test_result_is_independent_from_inputs() -> None:
     base = {
         "database": {
             "pool_size": 10,

@@ -9,7 +9,7 @@ from src.shared.exceptions import (
 )
 
 
-def test_public_exception_api():
+def test_public_exception_api() -> None:
     assert AGPPException is not None
     assert TransformationError is not None
     assert ValidationError is not None

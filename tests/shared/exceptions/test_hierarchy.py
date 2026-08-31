@@ -21,7 +21,7 @@ from src.shared.exceptions import (
         LoadingError,
     ],
 )
-def test_exception_types_inherit_from_agpp_exception(exception_type):
+def test_exception_types_inherit_from_agpp_exception(exception_type) -> None:
     error = exception_type(
         "Test error message",
         error_code="AGPP_TEST_ERROR",
@@ -31,7 +31,7 @@ def test_exception_types_inherit_from_agpp_exception(exception_type):
     assert isinstance(error, Exception)
 
 
-def test_specialized_exception_preserves_base_contract():
+def test_specialized_exception_preserves_base_contract() -> None:
     error = ValidationError(
         "Test validation error",
         error_code="VALIDATION_INVALID_SUPPLIER",
@@ -46,7 +46,7 @@ def test_specialized_exception_preserves_base_contract():
     assert error.retryable is False
 
 
-def test_exception_chaining_preserves_original_exception():
+def test_exception_chaining_preserves_original_exception() -> None:
     original_exception = RuntimeError("Database connection failed")
 
     try:
@@ -65,7 +65,7 @@ def test_exception_chaining_preserves_original_exception():
         assert str(error.__cause__) == "Database connection failed"
 
 
-def test_exception_chaining_is_explicit():
+def test_exception_chaining_is_explicit() -> None:
     original = RuntimeError("connection failed")
 
     try:
@@ -81,7 +81,7 @@ def test_exception_chaining_is_explicit():
         assert error.__suppress_context__ is True
 
 
-def test_error_code_is_machine_readable_identifier():
+def test_error_code_is_machine_readable_identifier() -> None:
     error = ValidationError(
         "Supplier currency is invalid",
         error_code="VALIDATION_INVALID_CURRENCY",
@@ -94,7 +94,7 @@ def test_error_code_is_machine_readable_identifier():
     )  # Ensure error_code is distinct from message
 
 
-def test_context_is_independent_from_source_dictionary():
+def test_context_is_independent_from_source_dictionary() -> None:
     context = {"supplier_id": 1847}
 
     error = ValidationError(

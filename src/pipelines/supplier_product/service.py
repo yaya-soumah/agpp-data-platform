@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from src.models.supplier_product import SupplierProduct
-from src.pipelines.supplier_product.extractors.base import SupplierProductExtractor
+from src.pipelines.supplier_product.extractors import SupplierProductExtractor
 from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
 from src.pipelines.supplier_product.transformer import SupplierProductTransformer
 from src.pipelines.supplier_product.validator import SupplierProductValidator
@@ -22,10 +22,10 @@ class SupplierProductPipelineService:
         self._transformer = transformer
         self._loader = loader
 
-    def run(self) -> LoadResult:
+    async def run(self) -> LoadResult:
         """Execute the Supplier Product pipeline."""
 
-        extracted_records = self._extractor.extract()
+        extracted_records = await self._extractor.extract()
         validated_records = self._validator.validate(extracted_records)
 
         products: Sequence[SupplierProduct] = self._transformer.transform(

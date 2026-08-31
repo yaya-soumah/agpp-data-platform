@@ -67,7 +67,7 @@ def valid_logging_config_data() -> dict:
     }
 
 
-def test_valid_app_config_is_accepted(valid_app_config_data):
+def test_valid_app_config_is_accepted(valid_app_config_data) -> None:
     config = AppConfig(**valid_app_config_data)
 
     assert config.application.name == "AGPP Data Platform"
@@ -75,7 +75,7 @@ def test_valid_app_config_is_accepted(valid_app_config_data):
     assert config.database.pool_size == 10
 
 
-def test_valid_logging_config_is_accepted(valid_logging_config_data):
+def test_valid_logging_config_is_accepted(valid_logging_config_data) -> None:
     config = LoggingConfig(**valid_logging_config_data)
 
     assert config.version == 1
@@ -83,77 +83,77 @@ def test_valid_logging_config_is_accepted(valid_logging_config_data):
     assert config.production.level == "INFO"
 
 
-def test_unknown_app_config_field_is_rejected(valid_app_config_data):
+def test_unknown_app_config_field_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["database"]["unknown_setting"] = True
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_batch_size_is_rejected(valid_app_config_data):
+def test_invalid_batch_size_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["pipeline"]["batch_size"] = 0
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_numeric_type_is_rejected(valid_app_config_data):
+def test_invalid_numeric_type_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["pipeline"]["batch_size"] = "10"
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_boolean_type_is_rejected(valid_app_config_data):
+def test_invalid_boolean_type_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["features"]["enable_metrics"] = "false"
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_retry_attempts_is_rejected(valid_app_config_data):
+def test_invalid_retry_attempts_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["pipeline"]["retry_attempts"] = -1
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_database_port_is_rejected(valid_app_config_data):
+def test_invalid_database_port_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["database"]["port"] = 70000
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_invalid_pool_size_is_rejected(valid_app_config_data):
+def test_invalid_pool_size_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["database"]["pool_size"] = 0
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_empty_application_name_is_rejected(valid_app_config_data):
+def test_empty_application_name_is_rejected(valid_app_config_data) -> None:
     valid_app_config_data["application"]["name"] = ""
 
     with pytest.raises(ValidationError):
         AppConfig(**valid_app_config_data)
 
 
-def test_configuration_is_immutable(valid_app_config_data):
+def test_configuration_is_immutable(valid_app_config_data) -> None:
     config = AppConfig(**valid_app_config_data)
 
     with pytest.raises(ValidationError):
         config.database.pool_size = 20
 
 
-def test_unknown_logging_field_is_rejected(valid_logging_config_data):
+def test_unknown_logging_field_is_rejected(valid_logging_config_data) -> None:
     valid_logging_config_data["unknown"] = True
 
     with pytest.raises(ValidationError):
         LoggingConfig(**valid_logging_config_data)
 
 
-def test_rejects_invalid_logging_level(valid_logging_config_data):
+def test_rejects_invalid_logging_level(valid_logging_config_data) -> None:
     valid_logging_config_data["production"]["level"] = "BANANA"
 
     with pytest.raises(ValidationError):
