@@ -1,5 +1,6 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
+import pytest
 from src.models.supplier_product import SupplierProduct
 from src.pipelines.supplier_product import (
     LoadResult,
@@ -9,7 +10,8 @@ from src.pipelines.supplier_product import (
 )
 
 
-def test_pipeline_executes_stages_in_order() -> None:
+@pytest.mark.asyncio
+async def test_pipeline_executes_stages_in_order() -> None:
     extractor = Mock()
     validator = Mock()
     transformer = Mock()
@@ -39,7 +41,7 @@ def test_pipeline_executes_stages_in_order() -> None:
 
     load_result = LoadResult(records_loaded=1)
 
-    extractor.extract.return_value = extracted_records
+    extractor.extract = AsyncMock(return_value=extracted_records)
     validator.validate.return_value = validated_records
     transformer.transform.return_value = [product]
     loader.load.return_value = load_result
@@ -51,7 +53,7 @@ def test_pipeline_executes_stages_in_order() -> None:
         loader=loader,
     )
 
-    result = service.run()
+    result = await service.run()
 
     assert result == load_result
 

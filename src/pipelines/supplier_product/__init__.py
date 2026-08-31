@@ -1,4 +1,3 @@
-from src.pipelines.supplier_product.extractors.base import SupplierProductExtractor
 from src.pipelines.supplier_product.extractors.csv import CSVExtractor
 from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
 from src.pipelines.supplier_product.models import (
@@ -11,7 +10,6 @@ from src.pipelines.supplier_product.validator import SupplierProductValidator
 
 __all__ = [
     "LoadResult",
-    "SupplierProductExtractor",
     "SupplierProductValidator",
     "SupplierProductTransformer",
     "SupplierProductLoader",

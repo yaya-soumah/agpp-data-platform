@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from src.pipelines.supplier_product.config import (
+    CSVSourceConfig,
     SupplierProductConfig,
-    SupplierProductSourceConfig,
     SupplierProductSourceType,
     SupplierProductValidationConfig,
 )
@@ -12,15 +12,15 @@ from src.shared.exceptions import ConfigurationError
 
 
 @pytest.fixture
-def source() -> SupplierProductSourceConfig:
-    return SupplierProductSourceConfig(
+def source() -> CSVSourceConfig:
+    return CSVSourceConfig(
         name="supplier_products",
         type=SupplierProductSourceType.CSV,
         path=Path("supplier_products.csv"),
     )
 
 
-def test_valid_source_config(source: SupplierProductSourceConfig) -> None:
+def test_valid_source_config(source: CSVSourceConfig) -> None:
 
     assert source.name == "supplier_products"
     assert source.type == SupplierProductSourceType.CSV
@@ -29,7 +29,7 @@ def test_valid_source_config(source: SupplierProductSourceConfig) -> None:
 
 def test_source_name_cannot_be_blank() -> None:
     with pytest.raises(ConfigurationError):
-        SupplierProductSourceConfig(
+        CSVSourceConfig(
             name=" ",
             type=SupplierProductSourceType.CSV,
             path=Path("supplier_product.csv"),
@@ -38,7 +38,7 @@ def test_source_name_cannot_be_blank() -> None:
 
 def test_source_type_must_be_supported() -> None:
     with pytest.raises(ValidationError):
-        SupplierProductSourceConfig(
+        CSVSourceConfig(
             name="supplier_products",
             type="json",
             path=Path("supplier_product.json"),
@@ -48,12 +48,12 @@ def test_source_type_must_be_supported() -> None:
 def test_valid_supplier_product_config() -> None:
     config = SupplierProductConfig(
         sources=[
-            SupplierProductSourceConfig(
+            CSVSourceConfig(
                 name="supplier_master",
                 type=SupplierProductSourceType.CSV,
                 path=Path("supplier_master.csv"),
             ),
-            SupplierProductSourceConfig(
+            CSVSourceConfig(
                 name="supplier_products",
                 type=SupplierProductSourceType.CSV,
                 path=Path("supplier_products.csv"),
@@ -73,7 +73,7 @@ def test_sources_cannot_be_empty() -> None:
         SupplierProductConfig(sources=[])
 
 
-def test_source_names_must_be_unique(source) -> None:
+def test_source_names_must_be_unique(source: CSVSourceConfig) -> None:
 
     with pytest.raises(ConfigurationError, match="Source names must be unique."):
         SupplierProductConfig(
@@ -81,7 +81,7 @@ def test_source_names_must_be_unique(source) -> None:
         )
 
 
-def test_validation_config_has_expected_default(source) -> None:
+def test_validation_config_has_expected_default(source: CSVSourceConfig) -> None:
     config = SupplierProductConfig(
         sources=[
             source,
@@ -96,7 +96,7 @@ def test_extra_fields_are_rejected() -> None:
         SupplierProductConfig(sources=[], unexpected="value")
 
 
-def test_configuration_is_immutable(source) -> None:
+def test_configuration_is_immutable(source: CSVSourceConfig) -> None:
 
     config = SupplierProductConfig(
         sources=[

@@ -1,7 +1,7 @@
 from src.shared.exceptions import AGPPException
 
 
-def test_agpp_exception_is_exception():
+def test_agpp_exception_is_exception() -> None:
 
     error = AGPPException(
         "Test error message",
@@ -11,7 +11,7 @@ def test_agpp_exception_is_exception():
     assert isinstance(error, Exception)
 
 
-def test_agpp_exception_stores_error_information():
+def test_agpp_exception_stores_error_information() -> None:
 
     error_message = "Test error message"
     error_code = "AGPP_TEST_ERROR"
@@ -31,7 +31,7 @@ def test_agpp_exception_stores_error_information():
     assert error.retryable is True
 
 
-def test_agpp_exception_defaults_to_non_retryable():
+def test_agpp_exception_defaults_to_non_retryable() -> None:
 
     error_message = "Test error message"
     error = AGPPException(

@@ -2,7 +2,7 @@ from logging import Logger
 from pathlib import Path
 
 import polars as pl
-from src.pipelines.supplier_product.config import SupplierProductSourceConfig
+from src.pipelines.supplier_product.config import CSVSourceConfig
 from src.shared.configuration.models import AppConfig
 from src.shared.exceptions import DataExtractionError
 
@@ -13,14 +13,14 @@ class CSVExtractor:
     def __init__(
         self,
         app_config: AppConfig,
-        source_config: SupplierProductSourceConfig,
+        source_config: CSVSourceConfig,
         logger: Logger,
     ) -> None:
         self._app_config = app_config
         self._source_config = source_config
         self._logger = logger
 
-    def extract(self) -> pl.DataFrame:
+    async def extract(self) -> pl.DataFrame:
         """Extract CSV data into a Polars DataFrame."""
 
         source_path = Path(self._app_config.paths.raw_data) / self._source_config.path

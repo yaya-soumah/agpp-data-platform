@@ -78,7 +78,7 @@ def logging_yaml() -> str:
 
 def test_load_development_configuration(
     tmp_path, base_yaml, development_yaml, logging_yaml
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -110,7 +110,7 @@ def test_load_development_configuration(
 
 def test_load_injects_environment_name(
     tmp_path, base_yaml, development_yaml, logging_yaml
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -135,7 +135,7 @@ def test_load_injects_environment_name(
 
 def test_reject_invalid_app_configuration(
     tmp_path, base_yaml, development_yaml, logging_yaml
-):
+) -> None:
 
     (tmp_path / "base.yaml").write_text(
         """
@@ -158,7 +158,7 @@ database:
 
 def test_reject_invalid_logging_configuration(
     tmp_path, base_yaml, development_yaml, logging_yaml
-):
+) -> None:
 
     (tmp_path / "base.yaml").write_text(base_yaml, encoding="utf-8")
     (tmp_path / "development.yaml").write_text(development_yaml, encoding="utf-8")
@@ -185,7 +185,7 @@ def test_configuration_is_immutable(
     base_yaml,
     development_yaml,
     logging_yaml,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -213,7 +213,7 @@ def test_reject_missing_logging_section(
     tmp_path,
     base_yaml,
     development_yaml,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -247,7 +247,7 @@ def test_load_resolves_environment_from_runtime(
     development_yaml,
     logging_yaml,
     monkeypatch,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -282,7 +282,7 @@ def test_load_rejects_missing_runtime_environment(
     development_yaml,
     logging_yaml,
     monkeypatch,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -317,7 +317,7 @@ def test_explicit_environment_does_not_require_runtime_environment(
     development_yaml,
     logging_yaml,
     monkeypatch,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",
@@ -351,7 +351,7 @@ def test_runtime_environment_selects_environment_configuration(
     development_yaml,
     logging_yaml,
     monkeypatch,
-):
+) -> None:
     (tmp_path / "base.yaml").write_text(
         base_yaml,
         encoding="utf-8",

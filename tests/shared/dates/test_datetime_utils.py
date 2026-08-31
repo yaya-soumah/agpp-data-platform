@@ -15,27 +15,27 @@ from src.shared.dates import (
 
 
 class TestUtcNow:
-    def test_returns_timezone_aware_datetime(self):
+    def test_returns_timezone_aware_datetime(self) -> None:
         result = utc_now()
 
         assert isinstance(result, datetime)
         assert result.tzinfo is not None
         assert result.utcoffset() == UTC.utcoffset(result)
 
-    def test_returns_utc_datetime(self):
+    def test_returns_utc_datetime(self) -> None:
         result = utc_now()
 
         assert result.tzinfo == UTC
 
 
 class TestEnsureAware:
-    def test_accepts_timezone_aware_datetime(self):
+    def test_accepts_timezone_aware_datetime(self) -> None:
         value = datetime(2026, 8, 12, 10, 30, tzinfo=UTC)
 
         result = ensure_aware(value)
         assert result == value
 
-    def test_rejects_naive_datetime(self):
+    def test_rejects_naive_datetime(self) -> None:
         value = datetime(
             2026,
             8,
@@ -49,20 +49,20 @@ class TestEnsureAware:
 
 
 class TestToUtc:
-    def test_converts_positive_offset_to_utc(self):
+    def test_converts_positive_offset_to_utc(self) -> None:
         value = datetime.fromisoformat("2026-08-12T10:00:00+08:00")
 
         result = to_utc(value)
 
         assert result == datetime(2026, 8, 12, 2, 0, tzinfo=UTC)
 
-    def test_converts_negative_offset_to_utc(self):
+    def test_converts_negative_offset_to_utc(self) -> None:
         value = datetime.fromisoformat("2026-08-12T10:00:00-04:00")
         result = to_utc(value)
 
         assert result == datetime(2026, 8, 12, 14, 0, tzinfo=UTC)
 
-    def test_rejects_naive_datetime(self):
+    def test_rejects_naive_datetime(self) -> None:
         value = datetime(
             2026,
             8,
@@ -74,7 +74,7 @@ class TestToUtc:
         with pytest.raises(NaiveDateTimeError):
             to_utc(value)
 
-    def test_timezone_conversion_handles_dst(self):
+    def test_timezone_conversion_handles_dst(self) -> None:
         value = datetime.fromisoformat("2026-07-01T12:00:00+00:00")
 
         result = convert_timezone(
@@ -87,7 +87,7 @@ class TestToUtc:
 
 
 class TestEnsureUtc:
-    def test_normalizes_aware_datetime_to_utc(self):
+    def test_normalizes_aware_datetime_to_utc(self) -> None:
         value = datetime.fromisoformat("2026-08-12T10:00:00+08:00")
 
         result = ensure_utc(value)
@@ -101,7 +101,7 @@ class TestEnsureUtc:
             tzinfo=UTC,
         )
 
-    def test_rejects_naive_datetime(self):
+    def test_rejects_naive_datetime(self) -> None:
         value = datetime(
             2026,
             8,
@@ -115,18 +115,18 @@ class TestEnsureUtc:
 
 
 class TestTimezone:
-    def test_resolves_valid_iana_timezone(self):
+    def test_resolves_valid_iana_timezone(self) -> None:
         result = timezone_from_name("Europe/Luxembourg")
 
         assert result.key == "Europe/Luxembourg"
 
-    def test_rejects_invalid_timezone(self):
+    def test_rejects_invalid_timezone(self) -> None:
         with pytest.raises(InvalidTimeZoneError):
             timezone_from_name("Not/A/Real/Timezone")
 
 
 class TestConvertTimezone:
-    def test_converts_timezone(self):
+    def test_converts_timezone(self) -> None:
         value = datetime.fromisoformat("2026-08-12T10:00:00+00:00")
 
         result = convert_timezone(
@@ -137,7 +137,7 @@ class TestConvertTimezone:
         assert result.tzinfo is not None
         assert result.hour == 12
 
-    def test_preserves_same_instant_when_converting_timezone(self):
+    def test_preserves_same_instant_when_converting_timezone(self) -> None:
         value = datetime.fromisoformat("2026-08-12T10:00:00+00:00")
 
         result = convert_timezone(
@@ -148,7 +148,7 @@ class TestConvertTimezone:
         assert result.utcoffset().total_seconds() == 8 * 60 * 60
         assert result.astimezone(UTC) == value
 
-    def test_rejects_naive_datetime(self):
+    def test_rejects_naive_datetime(self) -> None:
         value = datetime(
             2026,
             8,
@@ -165,12 +165,12 @@ class TestConvertTimezone:
 
 
 class TestIsDate:
-    def test_returns_true_for_date(self):
+    def test_returns_true_for_date(self) -> None:
         value = date(2026, 8, 12)
 
         assert is_date(value)
 
-    def test_returns_false_for_datetime(self):
+    def test_returns_false_for_datetime(self) -> None:
         value = datetime(
             2026,
             8,
@@ -189,5 +189,5 @@ class TestIsDate:
             20260812,
         ],
     )
-    def test_returns_false_for_non_date_values(self, value):
+    def test_returns_false_for_non_date_values(self, value) -> None:
         assert not is_date(value)
