@@ -11,6 +11,7 @@ name = "agpp-data-platform"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aioftp" },
     { name = "httpx" },
     { name = "polars-lts-cpu" },
     { name = "pydantic" },
@@ -30,6 +31,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aioftp", specifier = ">=0.22" },
     { name = "httpx" },
     { name = "polars-lts-cpu", specifier = ">=1.33.1" },
     { name = "pydantic" },
@@ -45,6 +47,15 @@ dev = [
     { name = "ruff" },
     { name = "types-pyyaml" },
     { name = "tzdata" },
+]
+
+[[package]]
+name = "aioftp"
+version = "0.28.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/5a/2f107c8d662fcf9f13eebd24b8f3711ffbd756688919515ccc247ba60daa/aioftp-0.28.0.tar.gz", hash = "sha256:311f66e9ff726055f73e74764fb62e097ab806da3177c13f1356c8e7eaf9a65d", size = 70445, upload-time = "2026-08-04T21:57:01.057Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/12/94/d62c9798ab178bdbccebb77ff9c8d49d7e0b9f90a5111365d2d62e6bc0c0/aioftp-0.28.0-py3-none-any.whl", hash = "sha256:59e3ca3e40452d02e7dfc7d05974dfebfc1f0b4ebd34ec02406f084597084ba6", size = 44349, upload-time = "2026-08-04T21:56:59.711Z" },
 ]
 
 [[package]]
