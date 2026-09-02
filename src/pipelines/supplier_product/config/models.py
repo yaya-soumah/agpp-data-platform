@@ -1,5 +1,5 @@
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -77,7 +77,63 @@ class APISourceConfig(SupplierProductConfigModel):
 class FTPSourceConfig(SupplierProductConfigModel):
     """Configuration for FTP source."""
 
-    ...
+    name: str = Field(min_length=1)
+    type: Literal[SupplierProductSourceType.FTP]
+    host: str = Field(min_length=1)
+    port: int = Field(default=21, ge=1, le=65535)
+    username: str = Field(min_length=1)
+    password_env_var: str = Field(min_length=1)
+    path: Path
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ConfigurationError(
+                "Source name must not be blank.",
+                error_code="CONFIG_SOURCE_NAME_VALIDATION_FAILED",
+            )
+        return value
+
+    @field_validator("host")
+    @classmethod
+    def validate_host(cls, value: str) -> str:
+        if not value.strip():
+            raise ConfigurationError(
+                "FTP host must not be blank.",
+                error_code="CONFIG_FTP_HOST_VALIDATION_FAILED",
+            )
+        return value
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        if not value.strip():
+            raise ConfigurationError(
+                "FTP username must not be blank.",
+                error_code="CONFIG_FTP_USERNAME_VALIDATION_FAILED",
+            )
+        return value
+
+    @field_validator("password_env_var")
+    @classmethod
+    def validate_password_env_var(cls, value: str) -> str:
+        if not value.strip():
+            raise ConfigurationError(
+                "FTP password environment variable name must not be blank.",
+                error_code="CONFIG_FTP_PASSWORD_ENV_VAR_VALIDATION_FAILED",
+            )
+        return value
+
+    @field_validator("path")
+    @classmethod
+    def validate_relative_path(cls, value: Path) -> Path:
+        if PurePosixPath(value.as_posix()).is_absolute():
+            raise ConfigurationError(
+                "FTP source path must not be absolute.",
+                error_code="CONFIG_FTP_SOURCE_PATH_MUST_BE_RELATIVE",
+            )
+        return value
 
 
 class SupplierProductValidationConfig(SupplierProductConfigModel):
@@ -86,7 +142,7 @@ class SupplierProductValidationConfig(SupplierProductConfigModel):
     reject_invalid_rows: bool = True
 
 
-SupplierProductSourceConfig = CSVSourceConfig | APISourceConfig
+SupplierProductSourceConfig = CSVSourceConfig | APISourceConfig | FTPSourceConfig
 
 
 class SupplierProductConfig(SupplierProductConfigModel):

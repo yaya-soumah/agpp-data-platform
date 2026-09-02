@@ -3,7 +3,12 @@ from pathlib import Path
 from src.shared.configuration.loader import load_yaml_file
 from src.shared.exceptions import ConfigurationError
 
-from .models import APISourceConfig, CSVSourceConfig, SupplierProductConfig
+from .models import (
+    APISourceConfig,
+    CSVSourceConfig,
+    FTPSourceConfig,
+    SupplierProductConfig,
+)
 
 
 class SupplierProductService:
@@ -37,6 +42,15 @@ class SupplierProductService:
             source
             for source in self.get_config().sources
             if isinstance(source, APISourceConfig)
+        ]
+
+    def load_ftp_config(self) -> list[FTPSourceConfig]:
+        """load and return all configuration API sources."""
+
+        return [
+            source
+            for source in self.get_config().sources
+            if isinstance(source, FTPSourceConfig)
         ]
 
     def _load_config(self) -> SupplierProductConfig:
