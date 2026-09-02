@@ -13,6 +13,11 @@ sources:
 
   - name: supplier_product_ftp
     type: ftp
+    host: ftp.example.com
+    port: 21
+    username: supplier_user
+    password_env_var: SUPPLIER_FTP_PASSWORD
+    path: supplier_products.csv
     
 validation:
   reject_invalid_rows: true

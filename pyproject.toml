@@ -9,6 +9,7 @@ dependencies = [
     "pydantic",
     "pyyaml",
     "httpx",
+    "aioftp>=0.22",
 ]
 
 [dependency-groups]
