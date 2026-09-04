@@ -1,0 +1,5 @@
+supplier_product_id,supplier_id,supplier_sku,name,description,price,currency,minimum_order_quantity,lead_time_days
+SP-001,SUP-001,ABC-500,Stainless Steel Bottle 500ml,Vacuum insulated stainless steel bottle,8.50,USD,100,7
+SP-002,SUP-001,ABC-750,Stainless Steel Bottle 750ml,Vacuum insulated stainless steel bottle,11.20,USD,50,10
+SP-003,SUP-002,XYZ-100,Industrial Safety Gloves,,3.75,EUR,200,14
+SP-004,SUP-003,,Industrial Cable Ties,Heavy duty nylon cable ties,,,500,5
