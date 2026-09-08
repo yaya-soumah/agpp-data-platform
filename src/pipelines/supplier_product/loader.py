@@ -1,8 +1,7 @@
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
-from src.models.supplier_product import SupplierProduct
+import polars as pl
 
 
 @dataclass(frozen=True)
@@ -17,7 +16,7 @@ class SupplierProductLoader(Protocol):
 
     def load(
         self,
-        products: Sequence[SupplierProduct],
+        products: pl.DataFrame,
     ) -> LoadResult:
         """Persist supplier products."""
         pass
