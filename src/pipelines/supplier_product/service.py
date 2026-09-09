@@ -1,9 +1,7 @@
-from collections.abc import Sequence
-
-from src.models.supplier_product import SupplierProduct
+import polars as pl
 from src.pipelines.supplier_product.extractors import SupplierProductExtractor
 from src.pipelines.supplier_product.loader import LoadResult, SupplierProductLoader
-from src.pipelines.supplier_product.transformer import SupplierProductTransformer
+from src.pipelines.supplier_product.transformer import DefaultSupplierProductTransformer
 from src.pipelines.supplier_product.validator import SupplierProductValidator
 
 
@@ -14,7 +12,7 @@ class SupplierProductPipelineService:
         self,
         extractor: SupplierProductExtractor,
         validator: SupplierProductValidator,
-        transformer: SupplierProductTransformer,
+        transformer: DefaultSupplierProductTransformer,
         loader: SupplierProductLoader,
     ) -> None:
         self._extractor = extractor
@@ -28,8 +26,6 @@ class SupplierProductPipelineService:
         extracted_records = await self._extractor.extract()
         validated_records = self._validator.validate(extracted_records)
 
-        products: Sequence[SupplierProduct] = self._transformer.transform(
-            validated_records
-        )
+        products: pl.DataFrame = self._transformer.transform(validated_records)
 
         return self._loader.load(products)
