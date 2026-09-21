@@ -7,7 +7,6 @@ __all__ = [
     "DefaultSupplierProductTransformer",
     "LoadResult",
     "SupplierProductValidator",
-    "SupplierProductTransformer",
     "SupplierProductLoader",
     "SupplierProductPipelineService",
 ]
