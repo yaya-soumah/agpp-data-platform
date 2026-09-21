@@ -19,4 +19,4 @@ class SupplierProductLoader(Protocol):
         products: pl.DataFrame,
     ) -> LoadResult:
         """Persist supplier products."""
-        pass
+        ...
