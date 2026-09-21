@@ -20,3 +20,21 @@ class SupplierProductLoader(Protocol):
     ) -> LoadResult:
         """Persist supplier products."""
         ...
+
+
+@dataclass(frozen=True)
+class WarehouseLoadResult:
+    """Result of a supplier product warehouse loading operation."""
+
+    records_loaded: int
+
+
+class SupplierProductWarehouseLoader(Protocol):
+    """Contract for supplier warehouse product persistence."""
+
+    def load(
+        self,
+        products: pl.DataFrame,
+    ) -> WarehouseLoadResult:
+        """Persist supplier products in the analytical warehouse."""
+        ...
