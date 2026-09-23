@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import aioftp
 import polars as pl
 import pytest
+from decimal import Decimal
 from src.pipelines.supplier_product.config import (
     FTPSourceConfig,
     SupplierProductSourceType,
@@ -57,6 +58,7 @@ def app_config() -> AppConfig:
         pipeline=PipelineConfig(
             batch_size=1000,
             retry_attempts=3,
+            max_rejection_ratio=Decimal("0.20")
         ),
         warehouse=WarehouseConfig(schema="analytics"),
         database=DatabaseConfig(
@@ -238,7 +240,8 @@ async def test_extract_retries_retryable_ftp_error(
     logger: Mock,
 ) -> None:
     origin = aioftp.StatusCodeError(
-        "550", "File unavailable", info="550 File unavailable"
+        "550", "File unavailable", #type: ignore
+        info="550 File unavailable" 
     )
 
     client = AsyncMock()

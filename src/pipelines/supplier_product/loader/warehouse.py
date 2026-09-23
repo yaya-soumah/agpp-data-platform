@@ -1,6 +1,7 @@
 from collections.abc import Iterator, Sequence
 
 import polars as pl
+from logging import Logger
 from psycopg import Connection, DatabaseError, OperationalError, sql
 from psycopg_pool import ConnectionPool
 from src.pipelines.supplier_product.loader import (
@@ -21,15 +22,38 @@ class PostgreSQLSupplierProductWarehouseLoader(SupplierProductWarehouseLoader):
         pool: ConnectionPool[Connection],
         pipeline_config: PipelineConfig,
         warehouse_config: WarehouseConfig,
+        logger: Logger
     ) -> None:
         self._pool = pool
-        self._pipeline_config = pipeline_config
+        self._batch_size = pipeline_config.batch_size
+        self._retry_attempts = pipeline_config.retry_attempts
         self._warehouse_config = warehouse_config
+        self._logger = logger
 
     def load(self, products: pl.DataFrame) -> WarehouseLoadResult:
         """Load supplier products into the warehouse."""
         if products.is_empty():
             return WarehouseLoadResult(records_loaded=0)
+
+        attempts = 0
+
+        while True:
+            try:
+                return self._load_once(products)
+            except InfrastructureError as exc:
+                if not exc.retryable or attempts >= self._retry_attempts:
+                    raise
+                attempts += 1
+
+                self._logger.warning(
+                    "Supplier product warehouse load failed with a "
+                    "retryable infrastructure error; retrying "
+                    "(attempt %d/%d).",
+                    attempts,
+                    self._retry_attempts
+                )
+    
+    def _load_once(self, products: pl.DataFrame) ->WarehouseLoadResult:
 
         rows = self._to_rows(products)
 
@@ -100,7 +124,7 @@ class PostgreSQLSupplierProductWarehouseLoader(SupplierProductWarehouseLoader):
         self,
         rows: Sequence[tuple[object, ...]],
     ) -> Iterator[Sequence[tuple[object, ...]]]:
-        batch_size = self._pipeline_config.batch_size
+        batch_size = self._batch_size
 
         for start in range(0, len(rows), batch_size):
             yield rows[start : start + batch_size]

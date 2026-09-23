@@ -1,10 +1,12 @@
 from logging import Logger
 from pathlib import Path
+from decimal import Decimal
 
 from src.pipelines.supplier_product.config import (
     APISourceConfig,
     CSVSourceConfig,
     FTPSourceConfig,
+    SupplierProductSourceType,
 )
 from src.pipelines.supplier_product.extractors import (
     APIExtractor,
@@ -47,6 +49,7 @@ def create_app_config() -> AppConfig:
         pipeline=PipelineConfig(
             batch_size=1000,
             retry_attempts=3,
+            max_rejection_ratio=Decimal("0.20")
         ),
         warehouse=WarehouseConfig(
             schema="analytics",
@@ -104,7 +107,7 @@ def test_create_returns_csv_extractor() -> None:
 
     source_config = CSVSourceConfig(
         name="supplier_master",
-        type="csv",
+        type=SupplierProductSourceType.CSV,
         path=Path("supplier_master.csv"),
     )
 
@@ -118,7 +121,7 @@ def test_create_returns_api_extractor() -> None:
 
     source_config = APISourceConfig(
         name="supplier_products_api",
-        type="api",
+        type=SupplierProductSourceType.API,
         url="https://example.com/products",
     )
 
@@ -132,7 +135,7 @@ def test_create_returns_ftp_extractor() -> None:
 
     source_config = FTPSourceConfig(
         name="supplier_products_ftp",
-        type="ftp",
+        type=SupplierProductSourceType.FTP,
         host="ftp.example.com",
         username="supplier",
         password_env_var="SUPPLIER_FTP_PASSWORD",

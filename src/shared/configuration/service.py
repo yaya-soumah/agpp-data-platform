@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
+from decimal import Decimal
 from src.shared.configuration.environment import Environment
 from src.shared.configuration.environment_resolver import EnvironmentResolver
 from src.shared.configuration.loader import load_yaml_file
@@ -41,6 +42,10 @@ class ConfigurationService:
             environment = self._environment_resolver.resolve()
 
         base_config = load_yaml_file(self._config_directory / "base.yaml")
+
+        if "pipeline" in base_config and "max_rejection_ratio" in base_config["pipeline"]:
+            base_config["pipeline"]["max_rejection_ratio"] = Decimal(base_config["pipeline"]["max_rejection_ratio"])
+
         environment_config = load_yaml_file(
             self._config_directory / f"{environment.value}.yaml"
         )

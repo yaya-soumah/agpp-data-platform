@@ -1,6 +1,7 @@
 from collections.abc import Iterator, Sequence
 
 import polars as pl
+from logging import Logger
 from psycopg import Connection, DatabaseError, OperationalError
 from psycopg_pool import ConnectionPool
 from src.pipelines.supplier_product.loader import LoadResult
@@ -32,9 +33,12 @@ class PostgreSQLSupplierProductLoader:
         self,
         pool: ConnectionPool[Connection],
         pipeline_config: PipelineConfig,
+        logger: Logger
     ) -> None:
         self._pool = pool
-        self._pipeline_config = pipeline_config
+        self._batch_size = pipeline_config.batch_size
+        self._retry_attempts = pipeline_config.retry_attempts
+        self._logger = logger
 
     def load(self, products: pl.DataFrame) -> LoadResult:
         """Atomically persist supplier products."""
@@ -42,6 +46,25 @@ class PostgreSQLSupplierProductLoader:
         if products.is_empty():
             return LoadResult(records_loaded=0)
 
+        attempts = 0
+
+        while True:
+            try:
+                return self._load_once(products)
+            except InfrastructureError as exc:
+                if not exc.retryable or attempts >= self._retry_attempts:
+                    raise
+
+                attempts += 1
+                self._logger.warning(
+                    "Operational supplier product load failed with a "
+                    "retryable infrastructure error; retrying "
+                    "(attempt %d/%d).",
+                    attempts,
+                    self._retry_attempts,
+                )
+            
+    def _load_once(self, products: pl.DataFrame) -> LoadResult:
         rows = self._to_rows(products)
 
         try:
@@ -92,7 +115,7 @@ class PostgreSQLSupplierProductLoader:
     ) -> Iterator[Sequence[tuple[object, ...]]]:
         """Yield rows according to the platform batch size."""
 
-        batch_size = self._pipeline_config.batch_size
+        batch_size = self._batch_size
 
         for start in range(0, len(rows), batch_size):
             yield rows[start : start + batch_size]
