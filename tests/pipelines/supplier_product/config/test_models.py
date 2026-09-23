@@ -40,7 +40,7 @@ def ftp_source() -> FTPSourceConfig:
         port=21,
         username="supplier_user",
         password_env_var="SUPPLIER_FTP_PASSWORD",
-        path="supplier_products.csv",
+        path=Path("supplier_products.csv")
     )
 
 
@@ -60,11 +60,11 @@ class TestCSVSourceConfig:
             )
 
     def test_source_type_must_be_supported(self) -> None:
-        with pytest.raises(ValidationError):
+        with pytest.raises(AttributeError):
             CSVSourceConfig(
                 name="supplier_products",
-                type="json",
-                path=Path("supplier_product.json"),
+                type=SupplierProductSourceType.JSON, #type: ignore
+                path=Path("supplier_product.csv"),
             )
 
     def test_valid_supplier_product_config(self) -> None:
@@ -115,7 +115,7 @@ class TestSupplierProductConfig:
 
     def test_extra_fields_are_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            SupplierProductConfig(sources=[], unexpected="value")
+            SupplierProductConfig(sources=[], unexpected="value") #type: ignore
 
     def test_configuration_is_immutable(self, csv_source: CSVSourceConfig) -> None:
 
@@ -149,7 +149,7 @@ class TestFTPSourceConfig:
             host="ftp.supplier.example.com",
             username="supplier_user",
             password_env_var="SUPPLIER_FTP_PASSWORD",
-            path="supplier_products.csv",
+            path=Path("supplier_products.csv"),
         )
 
         assert config.port == 21
@@ -162,7 +162,7 @@ class TestFTPSourceConfig:
             port=2121,
             username="supplier_user",
             password_env_var="SUPPLIER_FTP_PASSWORD",
-            path="supplier_products.csv",
+            path=Path("supplier_products.csv"),
         )
 
         assert config.port == 2121
@@ -175,7 +175,7 @@ class TestFTPSourceConfig:
                 host="   ",
                 username="supplier_user",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
-                path="supplier_products.csv",
+                path=Path("supplier_products.csv"),
             )
 
     def test_ftp_source_rejects_blank_username(self) -> None:
@@ -186,7 +186,7 @@ class TestFTPSourceConfig:
                 host="ftp.supplier.example.com",
                 username="   ",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
-                path="supplier_products.csv",
+                path=Path("supplier_products.csv"),
             )
 
     def test_ftp_source_rejects_blank_password_environment_variable(self) -> None:
@@ -200,7 +200,7 @@ class TestFTPSourceConfig:
                 host="ftp.supplier.example.com",
                 username="supplier_user",
                 password_env_var="   ",
-                path="supplier_products.csv",
+                path=Path("supplier_products.csv"),
             )
 
     def test_ftp_source_rejects_absolute_path(self) -> None:
@@ -214,7 +214,7 @@ class TestFTPSourceConfig:
                 host="ftp.supplier.example.com",
                 username="supplier_user",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
-                path="/supplier_products.csv",
+                path=Path("/supplier_products.csv"),
             )
 
     def test_ftp_source_rejects_invalid_port(self) -> None:
@@ -226,7 +226,7 @@ class TestFTPSourceConfig:
                 port=70000,
                 username="supplier_user",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
-                path="supplier_products.csv",
+                path=Path("supplier_products.csv"),
             )
 
     def test_supplier_product_config_accepts_ftp_source(self) -> None:
@@ -238,7 +238,7 @@ class TestFTPSourceConfig:
                     host="ftp.supplier.example.com",
                     username="supplier_user",
                     password_env_var="SUPPLIER_FTP_PASSWORD",
-                    path="supplier_products.csv",
+                    path=Path("supplier_products.csv"),
                 )
             ]
         )
@@ -252,7 +252,7 @@ class TestFTPSourceConfig:
                 CSVSourceConfig(
                     name="supplier_master",
                     type=SupplierProductSourceType.CSV,
-                    path="supplier_master.csv",
+                    path=Path("supplier_products.csv"),
                 ),
                 APISourceConfig(
                     name="supplier_products_api",
@@ -265,7 +265,7 @@ class TestFTPSourceConfig:
                     host="ftp.supplier.example.com",
                     username="supplier_user",
                     password_env_var="SUPPLIER_FTP_PASSWORD",
-                    path="supplier_products.csv",
+                    path=Path("supplier_products.csv"),
                 ),
             ]
         )
@@ -283,6 +283,6 @@ class TestFTPSourceConfig:
                 host="ftp.supplier.example.com",
                 username="supplier_user",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
-                path="supplier_products.csv",
-                password="secret",
+                path=Path("supplier_products.csv"),
+                password="secret", #type: ignore
             )

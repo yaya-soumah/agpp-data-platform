@@ -18,6 +18,7 @@ def base_yaml() -> str:
     pipeline:
       batch_size: 1000
       retry_attempts: 3
+      max_rejection_ratio: 0.20
     
     warehouse:
       schema: analytics

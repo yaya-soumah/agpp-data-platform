@@ -1,4 +1,5 @@
 from typing import Literal
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +30,7 @@ class PipelineConfig(ConfigurationModel):
 
     batch_size: int = Field(gt=0)
     retry_attempts: int = Field(ge=0)
+    max_rejection_ratio: Decimal = Field(ge=0, le=1)
 
 
 class WarehouseConfig(ConfigurationModel):

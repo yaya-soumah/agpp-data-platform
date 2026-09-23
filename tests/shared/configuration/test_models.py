@@ -1,4 +1,5 @@
 import pytest
+from decimal import Decimal
 from pydantic import ValidationError
 from src.shared.configuration.environment import Environment
 from src.shared.configuration.models import AppConfig, LoggingConfig
@@ -18,6 +19,7 @@ def valid_app_config_data() -> dict:
         "pipeline": {
             "batch_size": 1000,
             "retry_attempts": 3,
+            "max_rejection_ratio": Decimal("0.20")
         },
         "warehouse": {
             "schema": "analytics",

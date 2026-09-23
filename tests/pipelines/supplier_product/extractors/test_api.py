@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import httpx
 import polars as pl
 import pytest
+from decimal import Decimal
 from src.pipelines.supplier_product.config import (
     APISourceConfig,
     SupplierProductSourceType,
@@ -49,6 +50,7 @@ def app_config() -> AppConfig:
         pipeline=PipelineConfig(
             batch_size=1000,
             retry_attempts=3,
+            max_rejection_ratio=Decimal("0.20")
         ),
         warehouse=WarehouseConfig(schema="analytics"),
         database=DatabaseConfig(
