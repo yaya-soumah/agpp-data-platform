@@ -104,4 +104,4 @@ class APIExtractor:
             f"API extraction failed for source '{self._source_config.name}'",
             error_code="EXTRACT_API_FAILED",
             retryable=False,
-        ) from error_origin
+        )

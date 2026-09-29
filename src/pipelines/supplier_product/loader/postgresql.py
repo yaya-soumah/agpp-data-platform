@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
+from logging import Logger
 
 import polars as pl
-from logging import Logger
 from psycopg import Connection, DatabaseError, OperationalError
 from psycopg_pool import ConnectionPool
 from src.pipelines.supplier_product.loader import LoadResult
@@ -33,7 +33,7 @@ class PostgreSQLSupplierProductLoader:
         self,
         pool: ConnectionPool[Connection],
         pipeline_config: PipelineConfig,
-        logger: Logger
+        logger: Logger,
     ) -> None:
         self._pool = pool
         self._batch_size = pipeline_config.batch_size
@@ -63,7 +63,7 @@ class PostgreSQLSupplierProductLoader:
                     attempts,
                     self._retry_attempts,
                 )
-            
+
     def _load_once(self, products: pl.DataFrame) -> LoadResult:
         rows = self._to_rows(products)
 
