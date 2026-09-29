@@ -1,8 +1,8 @@
+from decimal import Decimal
 from unittest.mock import MagicMock
 
 import polars as pl
 import pytest
-from decimal import Decimal
 from psycopg import DatabaseError, OperationalError
 from src.pipelines.supplier_product.loader import (
     PostgreSQLSupplierProductWarehouseLoader,
@@ -20,9 +20,7 @@ def pool() -> MagicMock:
 @pytest.fixture
 def pipeline_config() -> PipelineConfig:
     return PipelineConfig(
-        batch_size=2,
-        retry_attempts=3,
-        max_rejection_ratio=Decimal("0.20")
+        batch_size=2, retry_attempts=3, max_rejection_ratio=Decimal("0.20")
     )
 
 
@@ -41,7 +39,7 @@ def loader(
         pool=pool,
         pipeline_config=pipeline_config,
         warehouse_config=warehouse_config,
-        logger=MagicMock()
+        logger=MagicMock(),
     )
 
 

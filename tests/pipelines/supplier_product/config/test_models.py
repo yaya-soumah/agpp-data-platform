@@ -40,7 +40,7 @@ def ftp_source() -> FTPSourceConfig:
         port=21,
         username="supplier_user",
         password_env_var="SUPPLIER_FTP_PASSWORD",
-        path=Path("supplier_products.csv")
+        path=Path("supplier_products.csv"),
     )
 
 
@@ -63,7 +63,7 @@ class TestCSVSourceConfig:
         with pytest.raises(AttributeError):
             CSVSourceConfig(
                 name="supplier_products",
-                type=SupplierProductSourceType.JSON, #type: ignore
+                type=SupplierProductSourceType.JSON,  # type: ignore
                 path=Path("supplier_product.csv"),
             )
 
@@ -115,7 +115,7 @@ class TestSupplierProductConfig:
 
     def test_extra_fields_are_rejected(self) -> None:
         with pytest.raises(ValidationError):
-            SupplierProductConfig(sources=[], unexpected="value") #type: ignore
+            SupplierProductConfig(sources=[], unexpected="value")  # type: ignore
 
     def test_configuration_is_immutable(self, csv_source: CSVSourceConfig) -> None:
 
@@ -284,5 +284,5 @@ class TestFTPSourceConfig:
                 username="supplier_user",
                 password_env_var="SUPPLIER_FTP_PASSWORD",
                 path=Path("supplier_products.csv"),
-                password="secret", #type: ignore
+                password="secret",  # type: ignore
             )

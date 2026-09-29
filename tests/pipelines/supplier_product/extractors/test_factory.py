@@ -1,6 +1,6 @@
+from decimal import Decimal
 from logging import Logger
 from pathlib import Path
-from decimal import Decimal
 
 from src.pipelines.supplier_product.config import (
     APISourceConfig,
@@ -47,9 +47,7 @@ def create_app_config() -> AppConfig:
             timezone="UTC",
         ),
         pipeline=PipelineConfig(
-            batch_size=1000,
-            retry_attempts=3,
-            max_rejection_ratio=Decimal("0.20")
+            batch_size=1000, retry_attempts=3, max_rejection_ratio=Decimal("0.20")
         ),
         warehouse=WarehouseConfig(
             schema="analytics",

@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
+from logging import Logger
 
 import polars as pl
-from logging import Logger
 from psycopg import Connection, DatabaseError, OperationalError, sql
 from psycopg_pool import ConnectionPool
 from src.pipelines.supplier_product.loader import (
@@ -22,7 +22,7 @@ class PostgreSQLSupplierProductWarehouseLoader(SupplierProductWarehouseLoader):
         pool: ConnectionPool[Connection],
         pipeline_config: PipelineConfig,
         warehouse_config: WarehouseConfig,
-        logger: Logger
+        logger: Logger,
     ) -> None:
         self._pool = pool
         self._batch_size = pipeline_config.batch_size
@@ -50,10 +50,10 @@ class PostgreSQLSupplierProductWarehouseLoader(SupplierProductWarehouseLoader):
                     "retryable infrastructure error; retrying "
                     "(attempt %d/%d).",
                     attempts,
-                    self._retry_attempts
+                    self._retry_attempts,
                 )
-    
-    def _load_once(self, products: pl.DataFrame) ->WarehouseLoadResult:
+
+    def _load_once(self, products: pl.DataFrame) -> WarehouseLoadResult:
 
         rows = self._to_rows(products)
 
