@@ -1,18 +1,18 @@
+import csv
 from logging import Logger
 from pathlib import Path
 
 import polars as pl
-import csv
-
 from src.shared.configuration.models import AppConfig
 from src.shared.exceptions import DataExtractionError
 
-from .base import CustomerOrdersBatch
 from ..models.schema import (
     CUSTOMER_SCHEMA,
     ORDER_LINE_SCHEMA,
     ORDER_SCHEMA,
 )
+from .base import CustomerOrdersBatch
+
 
 class CustomerOrderCSVExtractor:
     """Extract the three datasets of a customer-orders batch from CSV files."""
@@ -41,8 +41,7 @@ class CustomerOrderCSVExtractor:
         source_directory = Path(self._app_config.paths.raw_data)
 
         self._logger.info(
-            "Starting customer-orders CSV extraction from '%s'.",
-            source_directory
+            "Starting customer-orders CSV extraction from '%s'.", source_directory
         )
 
         dataframes: dict[str, pl.DataFrame] = {}
@@ -55,21 +54,23 @@ class CustomerOrderCSVExtractor:
             except OSError as exc:
                 self._logger.error(
                     "Customer-orders CSV extractor failed for '%s': %s",
-                    source_path, exc,
+                    source_path,
+                    exc,
                 )
                 raise DataExtractionError(
                     f"Failed to extract customer-orders file '{filename}'",
                     error_code="EXTRACT_CUSTOMER_ORDERS_CSV_FAILED",
                 ) from exc
-            
+
             expected_columns = list(schema)
-            if (
-                len(header) != len(expected_columns)
-                or set(header) != set(expected_columns)
+            if len(header) != len(expected_columns) or set(header) != set(
+                expected_columns
             ):
                 self._logger.error(
                     "Invalid columns in '%s'. Expected %s; received %s.",
-                    source_path,expected_columns,header,
+                    source_path,
+                    expected_columns,
+                    header,
                 )
                 raise DataExtractionError(
                     f"Invalid columns in customer-orders file '{filename}'",
@@ -77,12 +78,11 @@ class CustomerOrderCSVExtractor:
                 )
 
             try:
-                
                 dataframe = pl.read_csv(
                     source_path,
                     schema_overrides=dict(schema),
                     infer_schema_length=0,
-                    )
+                )
             except (pl.exceptions.PolarsError, OSError) as exc:
                 self._logger.error(
                     "Customer-orders CSV extraction failed for '%s': %s",
@@ -93,7 +93,7 @@ class CustomerOrderCSVExtractor:
                     f"Failed to extract customer-orders file '{filename}'",
                     error_code="EXTRACT_CUSTOMER_ORDERS_CSV_FAILED",
                 ) from exc
-            
+
             dataframes[filename] = dataframe.select(expected_columns)
 
             self._logger.info(
@@ -102,9 +102,7 @@ class CustomerOrderCSVExtractor:
                 dataframe.height,
                 dataframe.width,
             )
-        self._logger.info(
-            "Customer-orders CSV extraction completed successfully."
-        )
+        self._logger.info("Customer-orders CSV extraction completed successfully.")
 
         return CustomerOrdersBatch(
             customers=dataframes["customers.csv"],

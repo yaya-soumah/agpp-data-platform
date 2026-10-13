@@ -3,6 +3,7 @@ from typing import Protocol
 
 import polars as pl
 
+
 @dataclass(frozen=True)
 class CustomerOrdersBatch:
     customers: pl.DataFrame
@@ -11,6 +12,6 @@ class CustomerOrdersBatch:
 
 
 class CustomerOrdersExtractor(Protocol):
-    def extract(self)->CustomerOrdersBatch:
+    def extract(self) -> CustomerOrdersBatch:
         """Extract one complete customer-orders batch."""
         ...
