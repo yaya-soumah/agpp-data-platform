@@ -7,6 +7,7 @@ from .duplicate_detector import DefaultCustomerOrdersDuplicateDetector
 from .missing_value_validator import DefaultCustomerOrdersMissingValueValidator
 from .result import ValidationResult
 from .schema_validator import DefaultCustomerOrdersSchemaValidator
+from .service import CustomerOrdersValidationResult, CustomerOrdersValidationService
 
 __all__ = [
     "ValidationResult",
@@ -16,4 +17,6 @@ __all__ = [
     "DefaultCustomerOrdersBusinessValidator",
     "CustomerOrdersCrossFileValidationResult",
     "DefaultCustomerOrdersCrossFileValidator",
+    "CustomerOrdersValidationService",
+    "CustomerOrdersValidationResult",
 ]
