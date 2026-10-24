@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "AGPP internal data platform: supplier, orders and inventory pipelines."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "psycopg[binary]>=3.2",
+]
 
 [dependency-groups]
 dev = [
