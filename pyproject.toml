@@ -26,6 +26,7 @@ packages = ["src/agpp"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
+    "unit: fast, isolate tests (no network, no database)",
     "integration: needs external services (Postgres, FTP, ...)",
 ]
 
