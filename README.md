@@ -37,6 +37,17 @@ cp .env_example .env      # then edit .env with real values
 uv run python -m agpp.main
 ```
 
+## Local services
+
+PostgreSQL runs through Docker Compose and reads its credentials from `.env`:
+
+```bash
+docker compose up -d      # start
+docker compose ps         # check health
+docker compose down       # stop (data is kept)
+docker compose down -v    # stop and delete data
+```
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
