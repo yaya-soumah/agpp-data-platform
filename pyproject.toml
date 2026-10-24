@@ -45,7 +45,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "N", "C4", "RUF", "PT", "S"]
 python_version = "3.13"
 strict = true
 mypy_path = "src"
-packages = ["src/agpp", "tests"]
+packages = ["agpp", "tests"]
 
 [tool.coverage.run]
 branch = true
