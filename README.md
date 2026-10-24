@@ -48,6 +48,19 @@ uv run ruff format --check .
 uv run mypy
 ```
 
+## Testing
+
+`uv run pytest` runs unit tests and enforces a minimum of 85% branch
+coverage. Integration tests need Docker services and are excluded by
+default:
+
+```bash
+docker compose up -d
+uv run --env-file .env pytest -m integration --no-cov
+```
+
+See [ADR-0003](docs/adr/0003-testing-strategy.md).
+
 Optional local hooks for fast feedback before each commit:
 
 ```bash
