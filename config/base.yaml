@@ -1,0 +1,12 @@
+app:
+  name: agpp-data-platform
+  debug: false
+
+database:
+  host: ${POSTGRES_HOST:-localhost}
+  port: ${POSTGRES_PORT:-5432}
+  name: ${POSTGRES_DB}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  pool_min_size: 1
+  pool_max_size: 5
