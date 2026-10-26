@@ -48,6 +48,24 @@ docker compose down       # stop (data is kept)
 docker compose down -v    # stop and delete data
 ```
 
+## Configuration
+
+Settings come from `config/base.yaml`, overlaid by `config/<environment>.yaml`.
+The environment is chosen by `AGPP_ENV` (`development`, `testing` or
+`production`); it has no default. YAML values may reference environment
+variables as `${NAME}` (required) or `${NAME:-default}`. Secrets live only in
+`.env` or the process environment, never in YAML. See
+[ADR-0005](docs/adr/0005-configuration-first-and-environment-variables.md).
+
+```python
+from pathlib import Path
+
+from agpp.shared.configuration.service import load_config
+
+config = load_config(Path("config"), env_file=Path(".env"))
+print(config.database.host)
+```
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
@@ -67,7 +85,7 @@ default:
 
 ```bash
 docker compose up -d
-uv run --env-file .env pytest -m integration --no-cov
+uv run pytest -m integration --no-cov
 ```
 
 See [ADR-0003](docs/adr/0003-testing-strategy.md).
