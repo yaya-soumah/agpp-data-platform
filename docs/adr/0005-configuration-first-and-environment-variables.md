@@ -36,14 +36,6 @@ settings, and it must fail early and safely when they are wrong.
 7. Application code never reads `os.environ`. It receives a validated
    configuration object.
 
-## Alternatives considered
-
-| Option | Why not |
-|---|---|
-| pydantic-settings only | Handles env vars well but not layered YAML files with placeholders. |
-| Environment variables only | Loses reviewable, versioned non-secret settings. |
-| Default `AGPP_ENV` to development | A forgotten variable in production would silently run development settings. |
-
 ## Consequences
 
 ### Positive

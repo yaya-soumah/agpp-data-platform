@@ -10,3 +10,10 @@ database:
   password: ${POSTGRES_PASSWORD}
   pool_min_size: 1
   pool_max_size: 5
+
+logging:
+  level: INFO
+  format: console
+  file: null
+  file_max_bytes: 10485760
+  file_backup_count: 5

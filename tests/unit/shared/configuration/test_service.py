@@ -82,3 +82,27 @@ def test_logs_the_environment_but_no_values(
 
     assert "development" in caplog.text
     assert "s3cret" not in caplog.text
+
+
+def test_logging_settings_follow_the_overlays(project_root: Path) -> None:
+    development = load_config(project_root / "config", environ=ENV)
+    production = load_config(project_root / "config", environ={**ENV, "AGPP_ENV": "production"})
+
+    assert development.logging.level == "DEBUG"
+    assert development.logging.file == "logs/agpp.log"
+    assert production.logging.format == "json"
+    assert production.logging.file is None
+
+
+def test_invalid_log_level_is_rejected(tmp_path: Path) -> None:
+    (tmp_path / "base.yaml").write_text(
+        "app:\n  name: x\n"
+        "database:\n  host: h\n  port: 5432\n  name: d\n  user: u\n"
+        "  password: ${POSTGRES_PASSWORD}\n  pool_min_size: 1\n  pool_max_size: 2\n"
+        "logging:\n  level: LOUD\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "development.yaml").write_text("app:\n  debug: true\n", encoding="utf-8")
+
+    with pytest.raises(InvalidConfigurationError, match=r"logging\.level"):
+        load_config(tmp_path, environ={"AGPP_ENV": "development", "POSTGRES_PASSWORD": "s3cret"})

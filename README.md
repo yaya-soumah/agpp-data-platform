@@ -66,6 +66,15 @@ config = load_config(Path("config"), env_file=Path(".env"))
 print(config.database.host)
 ```
 
+## Logging
+
+Logging is configured once at startup from the `logging` section of the
+configuration (`level`, `format`, optional `file`). Development logs
+human-readable lines to stderr and to `logs/agpp.log`; production writes JSON
+lines to stderr. Pipelines log through
+`get_pipeline_logger(pipeline, run_id)` so every record carries its run
+context. See [ADR-0006](docs/adr/0006-logging.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
