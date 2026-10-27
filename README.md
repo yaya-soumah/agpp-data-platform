@@ -34,7 +34,7 @@ git clone https://github.com/yaya-soumah/agpp-data-platform.git
 cd agpp-data-platform
 uv sync
 cp .env_example .env      # then edit .env with real values
-uv run python -m agpp.main
+uv run agpp check-config
 ```
 
 ## Local services
@@ -74,6 +74,17 @@ human-readable lines to stderr and to `logs/agpp.log`; production writes JSON
 lines to stderr. Pipelines log through
 `get_pipeline_logger(pipeline, run_id)` so every record carries its run
 context. See [ADR-0006](docs/adr/0006-logging.md).
+
+## Command line
+
+```bash
+uv run agpp --help
+uv run agpp check-config    # load and validate configuration
+```
+
+Exit codes: `0` success, `1` platform error during a command, `2` invalid
+configuration. Run from the repository root, or pass `--config-dir` and
+`--env-file`.
 
 ## Quality gates
 
