@@ -3,3 +3,6 @@ app:
 
 database:
   pool_max_size: 2
+
+logging:
+  level: WARNING
