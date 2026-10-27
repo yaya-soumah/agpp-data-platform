@@ -17,7 +17,7 @@ def extra_fields(record: logging.LogRecord) -> dict[str, Any]:
 class ConsoleFormatter(logging.Formatter):
     """Human-readable lines in UTC; extra fields are appended as key=value."""
 
-    converter = time.gmtime
+    converter = time.gmtime  # type: ignore[assignment]
 
     def formatMessage(self, record: logging.LogRecord) -> str:  # noqa: N802
         line = super().formatMessage(record)
