@@ -1,10 +1,14 @@
-"""Errors raised when loading or validating configuration."""
+"""Errors raised while loading or validating configuration."""
+
+from typing import ClassVar
 
 from agpp.shared.exceptions.base import AgppError
 
 
 class ConfigurationError(AgppError):
     """Configuration is missing, unreadable or invalid."""
+
+    stage: ClassVar[str] = "configuration"
 
 
 class ConfigurationFileError(ConfigurationError):
@@ -19,5 +23,8 @@ class MissingEnvironmentVariableError(ConfigurationError):
     """A required environment variable is not set."""
 
     def __init__(self, name: str) -> None:
-        super().__init__(f"Environment variable {name!r} is required but not set")
+        super().__init__(
+            f"Environment variable {name!r} is required but not set",
+            context={"variable": name},
+        )
         self.name = name
