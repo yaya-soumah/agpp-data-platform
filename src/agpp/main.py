@@ -9,6 +9,8 @@ from pathlib import Path
 from agpp import __version__
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.configuration.service import load_config
+from agpp.shared.database import create_pool
+from agpp.shared.database.migrations import apply_migrations
 from agpp.shared.exceptions import AgppError, ConfigurationError
 from agpp.shared.logging import configure_logging
 
@@ -24,8 +26,19 @@ def _check_config(config: PlatformConfig) -> int:
     return EXIT_OK
 
 
+def _migrate(config: PlatformConfig) -> int:
+    pool = create_pool(config.database)
+    try:
+        applied = apply_migrations(pool, Path(config.database.migrations_dir))
+    finally:
+        pool.close()
+    logger.info("Migrations complete", extra={"applied": len(applied)})
+    return EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig], int]] = {
     "check-config": _check_config,
+    "migrate": _migrate,
 }
 
 
@@ -46,6 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("check-config", help="load and validate the configuration")
+    subcommands.add_parser("migrate", help="apply pending database migrations")
+
     return parser
 
 
