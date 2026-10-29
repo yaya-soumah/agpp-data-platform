@@ -5,6 +5,7 @@ description = "AGPP internal data platform: supplier, orders and inventory pipel
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "psycopg-pool>=3.2",
     "psycopg[binary]>=3.2",
     "pydantic>=2.14.1",
     "python-dotenv>=1.2.4",
