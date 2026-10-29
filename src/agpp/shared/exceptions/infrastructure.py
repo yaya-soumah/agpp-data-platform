@@ -19,3 +19,7 @@ class TransientInfrastructureError(InfrastructureError):
 
 class DatabaseConnectionError(TransientInfrastructureError):
     """The database could not be reached."""
+
+
+class MigrationError(InfrastructureError):
+    """A migration is invalid, was modified after being applied, or is inconsistent."""
