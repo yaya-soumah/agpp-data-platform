@@ -27,6 +27,7 @@ class DatabaseConfig(FrozenModel):
     pool_min_size: int = Field(ge=1)
     pool_max_size: int = Field(ge=1)
     connect_timeout_seconds: int = Field(default=10, ge=1)
+    migrations_dir: str = "sql/migrations"
 
     @model_validator(mode="after")
     def _check_pool_sizes(self) -> Self:
