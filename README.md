@@ -47,6 +47,22 @@ docker compose ps         # check health
 docker compose down       # stop (data is kept)
 docker compose down -v    # stop and delete data
 ```
+## Database and migrations
+
+The database has two schemas: `operational` (run history, rejected records,
+migration bookkeeping) and `warehouse` (the dimensional model). See
+[ADR-0008](docs/adr/0008-warehouse-separation-and-database-access.md).
+
+Schema changes are versioned SQL files in `sql/migrations/`, named
+`NNNN_description.sql`. Apply them with:
+
+```bash
+uv run agpp migrate
+```
+
+Each migration runs in one transaction and is recorded with a checksum.
+Never edit a migration that has been applied: add a new one instead. A
+modified or missing applied migration stops the run.
 
 ## Configuration
 

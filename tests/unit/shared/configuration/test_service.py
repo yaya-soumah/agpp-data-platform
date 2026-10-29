@@ -112,3 +112,9 @@ def test_connect_timeout_comes_from_base_config(project_root: Path) -> None:
     config = load_config(project_root / "config", environ=ENV)
 
     assert config.database.connect_timeout_seconds == 10
+
+
+def test_migrations_directory_comes_from_base_config(project_root: Path) -> None:
+    config = load_config(project_root / "config", environ=ENV)
+
+    assert config.database.migrations_dir == "sql/migrations"

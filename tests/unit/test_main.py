@@ -39,6 +39,14 @@ def cli_args(tmp_path: Path) -> list[str]:
     return ["--config-dir", str(config_dir), "--env-file", str(tmp_path / "absent.env")]
 
 
+class _FakePool:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
 def test_check_config_succeeds_and_logs(
     cli_args: list[str], caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -89,3 +97,16 @@ def test_command_is_required() -> None:
         cli.main([])
 
     assert exit_info.value.code == 2
+
+
+def test_migrate_applies_migrations_and_closes_the_pool(
+    cli_args: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _FakePool()
+    monkeypatch.setattr(cli, "create_pool", lambda _config: fake)
+    monkeypatch.setattr(cli, "apply_migrations", lambda _pool, _directory: [])
+
+    exit_code = cli.main([*cli_args, "migrate"])
+
+    assert exit_code == cli.EXIT_OK
+    assert fake.closed

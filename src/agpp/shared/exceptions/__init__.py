@@ -15,6 +15,7 @@ from agpp.shared.exceptions.extraction import (
 from agpp.shared.exceptions.infrastructure import (
     DatabaseConnectionError,
     InfrastructureError,
+    MigrationError,
     TransientInfrastructureError,
 )
 from agpp.shared.exceptions.loading import LoadingError, WarehouseWriteError
@@ -35,6 +36,7 @@ __all__ = [
     "InfrastructureError",
     "InvalidConfigurationError",
     "LoadingError",
+    "MigrationError",
     "MissingEnvironmentVariableError",
     "QualityThresholdExceededError",
     "SchemaValidationError",
