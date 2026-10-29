@@ -106,3 +106,9 @@ def test_invalid_log_level_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidConfigurationError, match=r"logging\.level"):
         load_config(tmp_path, environ={"AGPP_ENV": "development", "POSTGRES_PASSWORD": "s3cret"})
+
+
+def test_connect_timeout_comes_from_base_config(project_root: Path) -> None:
+    config = load_config(project_root / "config", environ=ENV)
+
+    assert config.database.connect_timeout_seconds == 10
