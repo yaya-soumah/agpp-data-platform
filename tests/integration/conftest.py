@@ -8,6 +8,7 @@ from psycopg import sql
 
 from agpp.shared.configuration.models import DatabaseConfig
 from agpp.shared.configuration.service import load_config
+from agpp.shared.database import Pool, create_pool
 from agpp.shared.database.pool import build_conninfo
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -33,3 +34,10 @@ def scratch_database(database_config: DatabaseConfig) -> Iterator[DatabaseConfig
             conn.execute(
                 sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(name))
             )
+
+
+@pytest.fixture
+def scratch_pool(scratch_database: DatabaseConfig) -> Iterator[Pool]:
+    pool = create_pool(scratch_database)
+    yield pool
+    pool.close()
