@@ -64,6 +64,14 @@ Each migration runs in one transaction and is recorded with a checksum.
 Never edit a migration that has been applied: add a new one instead. A
 modified or missing applied migration stops the run.
 
+### Loading data
+
+Warehouse conventions (keys, audit columns, unknown members, Type 1 history)
+are in [ADR-0009](docs/adr/0009-warehouse-modeling-conventions.md). Loads go
+through `agpp.shared.database.warehouse.upsert`, which writes only rows whose
+values changed, so running a pipeline twice on the same input leaves the data
+unchanged.
+
 ## Configuration
 
 Settings come from `config/base.yaml`, overlaid by `config/<environment>.yaml`.
