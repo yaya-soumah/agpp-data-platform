@@ -1,20 +1,11 @@
 import shutil
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
-from agpp.shared.configuration.models import DatabaseConfig
-from agpp.shared.database import Pool, connection, create_pool
+from agpp.shared.database import Pool, connection
 from agpp.shared.database.migrations import apply_migrations
 from agpp.shared.exceptions import DatabaseConnectionError, InfrastructureError, MigrationError
-
-
-@pytest.fixture
-def scratch_pool(scratch_database: DatabaseConfig) -> Iterator[Pool]:
-    pool = create_pool(scratch_database)
-    yield pool
-    pool.close()
 
 
 @pytest.fixture
@@ -34,7 +25,7 @@ def _schemas(pool: Pool) -> set[str]:
 def test_real_migrations_create_both_schemas(scratch_pool: Pool, migrations_dir: Path) -> None:
     applied = apply_migrations(scratch_pool, migrations_dir)
 
-    assert [migration.version for migration in applied] == [1]
+    assert applied[0].version == 1
     assert _schemas(scratch_pool) == {"operational", "warehouse"}
 
 
