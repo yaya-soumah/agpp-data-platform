@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import pytest
@@ -81,7 +82,7 @@ def test_missing_config_directory_is_a_configuration_error(
 def test_platform_error_in_a_command_returns_error_code(
     cli_args: list[str], monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    def failing(_config: PlatformConfig) -> int:
+    def failing(_config: PlatformConfig, _args: argparse.Namespace) -> int:
         raise AgppError("boom")
 
     monkeypatch.setitem(cli.COMMANDS, "check-config", failing)

@@ -21,12 +21,12 @@ EXIT_ERROR = 1
 EXIT_CONFIGURATION_ERROR = 2
 
 
-def _check_config(config: PlatformConfig) -> int:
+def _check_config(config: PlatformConfig, _args: argparse.Namespace) -> int:
     logger.info("Configuration is valid", extra={"environment": config.environment.value})
     return EXIT_OK
 
 
-def _migrate(config: PlatformConfig) -> int:
+def _migrate(config: PlatformConfig, _args: argparse.Namespace) -> int:
     pool = create_pool(config.database)
     try:
         applied = apply_migrations(pool, Path(config.database.migrations_dir))
@@ -36,7 +36,7 @@ def _migrate(config: PlatformConfig) -> int:
     return EXIT_OK
 
 
-COMMANDS: dict[str, Callable[[PlatformConfig], int]] = {
+COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
 }
@@ -78,7 +78,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     configure_logging(config.logging)
 
     try:
-        return COMMANDS[args.command](config)
+        return COMMANDS[args.command](config, args)
     except AgppError:
         logger.exception("Command %s failed", args.command)
         return EXIT_ERROR
