@@ -1,0 +1,30 @@
+# Supplier Product pipeline settings (ADR-0010).
+# Paths may use ${AGPP_DATA_DIR:-data} to move the data folder per environment.
+quality:
+  max_reject_ratio: 0.10
+  allowed_currencies: [EUR, USD, GBP, CHF]
+  max_unit_price: 1000000
+  future_tolerance_minutes: 5
+
+suppliers:
+  - supplier_id: SUP-001
+    name: Alpine Components
+    country: LU
+    source:
+      type: csv
+      path: ${AGPP_DATA_DIR:-data}/incoming/supplier_product/sup-001.csv
+
+  - supplier_id: SUP-002
+    name: Rhine Industrial Supply
+    country: DE
+    source:
+      type: csv
+      path: ${AGPP_DATA_DIR:-data}/incoming/supplier_product/sup-002.csv
+      delimiter: ";"
+
+  - supplier_id: SUP-003
+    name: Meuse Office Goods
+    country: BE
+    source:
+      type: csv
+      path: ${AGPP_DATA_DIR:-data}/incoming/supplier_product/sup-003.csv
