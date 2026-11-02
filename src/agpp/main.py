@@ -7,10 +7,13 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from agpp import __version__
+from agpp.pipelines.supplier_product.config import SupplierProductConfig
+from agpp.pipelines.supplier_product.sample_data import generate_supplier_files
 from agpp.shared.configuration.models import PlatformConfig
-from agpp.shared.configuration.service import load_config
+from agpp.shared.configuration.service import load_config, load_pipeline_config
 from agpp.shared.database import create_pool
 from agpp.shared.database.migrations import apply_migrations
+from agpp.shared.dates.datetime_utils import utc_now
 from agpp.shared.exceptions import AgppError, ConfigurationError
 from agpp.shared.logging import configure_logging
 
@@ -36,9 +39,48 @@ def _migrate(config: PlatformConfig, _args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return value
+
+
+def _ratio(text: str) -> float:
+    value = float(text)
+    if not 0 <= value <= 1:
+        raise argparse.ArgumentTypeError("must be between 0 and 1")
+    return value
+
+
+def _generate_sample_data(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = load_pipeline_config(
+        args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
+    )
+    summaries = generate_supplier_files(
+        pipeline_config,
+        rows_per_supplier=args.rows,
+        bad_row_ratio=args.bad_ratio,
+        seed=args.seed,
+        now=utc_now(),
+    )
+    for summary in summaries:
+        logger.info(
+            "Generated supplier file",
+            extra={
+                "supplier_id": summary.supplier_id,
+                "path": str(summary.path),
+                "rows": summary.rows,
+                "defective_rows": summary.defective_rows,
+            },
+        )
+    return EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
+    "generate-sample-data": _generate_sample_data,
 }
 
 
@@ -60,6 +102,15 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("check-config", help="load and validate the configuration")
     subcommands.add_parser("migrate", help="apply pending database migrations")
+
+    generate = subcommands.add_parser(
+        "generate-sample-data", help="write synthetic supplier CSV files for development"
+    )
+    generate.add_argument("--rows", type=_positive_int, default=200, help="rows per supplier")
+    generate.add_argument(
+        "--bad-ratio", type=_ratio, default=0.05, help="share of deliberately bad rows"
+    )
+    generate.add_argument("--seed", type=int, default=42, help="seed for reproducible files")
 
     return parser
 
