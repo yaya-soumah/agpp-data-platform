@@ -110,6 +110,21 @@ Exit codes: `0` success, `1` platform error during a command, `2` invalid
 configuration. Run from the repository root, or pass `--config-dir` and
 `--env-file`.
 
+## Sample data
+
+Supplier files for the Supplier Product pipeline can be generated locally:
+
+```bash
+uv run agpp generate-sample-data --rows 200 --bad-ratio 0.05 --seed 42
+```
+
+Files are written where `config/pipelines/supplier_product.yaml` says (by
+default under `data/incoming/supplier_product/`). The output is reproducible
+for a given seed. A share of rows is deliberately defective, so validation
+and the quality gate (`max_reject_ratio`) can be demonstrated; raise
+`--bad-ratio` above 0.10 to see a run fail the gate. See
+[ADR-0010](docs/adr/0010-supplier-product-pipeline-contract.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
