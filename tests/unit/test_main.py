@@ -1,3 +1,5 @@
+import argparse
+import shutil
 from pathlib import Path
 
 import pytest
@@ -81,7 +83,7 @@ def test_missing_config_directory_is_a_configuration_error(
 def test_platform_error_in_a_command_returns_error_code(
     cli_args: list[str], monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    def failing(_config: PlatformConfig) -> int:
+    def failing(_config: PlatformConfig, _args: argparse.Namespace) -> int:
         raise AgppError("boom")
 
     monkeypatch.setitem(cli.COMMANDS, "check-config", failing)
@@ -110,3 +112,34 @@ def test_migrate_applies_migrations_and_closes_the_pool(
 
     assert exit_code == cli.EXIT_OK
     assert fake.closed
+
+
+def test_generate_sample_data_writes_the_supplier_files(
+    cli_args: list[str],
+    tmp_path: Path,
+    project_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_dir = Path(cli_args[1])
+    (config_dir / "pipelines").mkdir()
+    shutil.copy(
+        project_root / "config" / "pipelines" / "supplier_product.yaml",
+        config_dir / "pipelines",
+    )
+    monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
+
+    exit_code = cli.main([*cli_args, "generate-sample-data", "--rows", "20"])
+
+    assert exit_code == cli.EXIT_OK
+    written = sorted((tmp_path / "data" / "incoming" / "supplier_product").glob("*.csv"))
+    assert [path.name for path in written] == ["sup-001.csv", "sup-002.csv", "sup-003.csv"]
+
+
+def test_generate_sample_data_rejects_a_bad_ratio(
+    cli_args: list[str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main([*cli_args, "generate-sample-data", "--bad-ratio", "2"])
+
+    assert exit_info.value.code == 2
+    assert "between 0 and 1" in capsys.readouterr().err
