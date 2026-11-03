@@ -78,3 +78,26 @@ def test_reject_ratio_must_be_between_zero_and_one() -> None:
 
     with pytest.raises(ValidationError, match="max_reject_ratio"):
         SupplierProductConfig.model_validate(data)
+
+
+def test_extraction_settings_come_from_the_yaml(project_root: Path) -> None:
+    config = load_pipeline_config(
+        project_root / "config", "supplier_product", SupplierProductConfig, environ={}
+    )
+
+    assert config.extraction.max_attempts == 3
+    assert config.extraction.initial_delay_seconds == 1.0
+
+
+def test_extraction_settings_have_defaults() -> None:
+    config = SupplierProductConfig.model_validate(_data())
+
+    assert config.extraction.max_attempts == 3
+
+
+def test_extraction_attempts_must_be_at_least_one() -> None:
+    data = _data()
+    data["extraction"] = {"max_attempts": 0}
+
+    with pytest.raises(ValidationError, match="max_attempts"):
+        SupplierProductConfig.model_validate(data)
