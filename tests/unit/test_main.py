@@ -1,5 +1,4 @@
 import argparse
-import shutil
 from pathlib import Path
 
 import pytest
@@ -39,6 +38,21 @@ def cli_args(tmp_path: Path) -> list[str]:
     (config_dir / "base.yaml").write_text(BASE_CONFIG, encoding="utf-8")
     (config_dir / "development.yaml").write_text("app:\n  debug: true\n", encoding="utf-8")
     return ["--config-dir", str(config_dir), "--env-file", str(tmp_path / "absent.env")]
+
+
+@pytest.fixture
+def supplier_data_dir(
+    cli_args: list[str], tmp_path: Path, project_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> Path:
+    pipelines = Path(cli_args[1]) / "pipelines"
+    pipelines.mkdir()
+    text = (project_root / "config" / "pipelines" / "supplier_product.yaml").read_text(
+        encoding="utf-8"
+    )
+    text = text.replace("initial_delay_seconds: 1.0", "initial_delay_seconds: 0")
+    (pipelines / "supplier_product.yaml").write_text(text, encoding="utf-8")
+    monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
+    return tmp_path / "data" / "incoming" / "supplier_product"
 
 
 class _FakePool:
@@ -115,23 +129,12 @@ def test_migrate_applies_migrations_and_closes_the_pool(
 
 
 def test_generate_sample_data_writes_the_supplier_files(
-    cli_args: list[str],
-    tmp_path: Path,
-    project_root: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    cli_args: list[str], supplier_data_dir: Path
 ) -> None:
-    config_dir = Path(cli_args[1])
-    (config_dir / "pipelines").mkdir()
-    shutil.copy(
-        project_root / "config" / "pipelines" / "supplier_product.yaml",
-        config_dir / "pipelines",
-    )
-    monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
-
     exit_code = cli.main([*cli_args, "generate-sample-data", "--rows", "20"])
 
     assert exit_code == cli.EXIT_OK
-    written = sorted((tmp_path / "data" / "incoming" / "supplier_product").glob("*.csv"))
+    written = sorted(supplier_data_dir.glob("*.csv"))
     assert [path.name for path in written] == ["sup-001.csv", "sup-002.csv", "sup-003.csv"]
 
 
@@ -143,3 +146,23 @@ def test_generate_sample_data_rejects_a_bad_ratio(
 
     assert exit_info.value.code == 2
     assert "between 0 and 1" in capsys.readouterr().err
+
+
+def test_extract_supplier_products_reads_the_generated_files(
+    cli_args: list[str], supplier_data_dir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    cli.main([*cli_args, "generate-sample-data", "--rows", "20"])
+
+    exit_code = cli.main([*cli_args, "extract-supplier-products"])
+
+    assert exit_code == cli.EXIT_OK
+    assert "Extraction finished" in caplog.text
+
+
+def test_extract_supplier_products_fails_when_a_source_is_missing(
+    cli_args: list[str], supplier_data_dir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    exit_code = cli.main([*cli_args, "extract-supplier-products"])
+
+    assert exit_code == cli.EXIT_ERROR
+    assert caplog.text.count("Supplier extraction failed") == 3

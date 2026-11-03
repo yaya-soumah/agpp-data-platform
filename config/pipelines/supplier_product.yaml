@@ -6,6 +6,10 @@ quality:
   max_unit_price: 1000000
   future_tolerance_minutes: 5
 
+extraction:
+  max_attempts: 3
+  initial_delay_seconds: 1.0
+
 suppliers:
   - supplier_id: SUP-001
     name: Alpine Components
