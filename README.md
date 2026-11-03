@@ -125,6 +125,18 @@ and the quality gate (`max_reject_ratio`) can be demonstrated; raise
 `--bad-ratio` above 0.10 to see a run fail the gate. See
 [ADR-0010](docs/adr/0010-supplier-product-pipeline-contract.md).
 
+## Supplier Product extraction
+
+```bash
+uv run agpp extract-supplier-products
+```
+
+Reads every supplier source from `config/pipelines/supplier_product.yaml` and
+logs the rows and columns found per supplier. Unreadable sources are retried
+(`extraction.max_attempts`, `extraction.initial_delay_seconds`); a supplier
+that still fails is reported while the others continue, and the command exits
+with status 1. See [ADR-0011](docs/adr/0011-extraction-design.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
