@@ -3,11 +3,13 @@
 import argparse
 import logging
 import sys
+import uuid
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from agpp import __version__
 from agpp.pipelines.supplier_product.config import SupplierProductConfig
+from agpp.pipelines.supplier_product.extraction import extract_all
 from agpp.pipelines.supplier_product.sample_data import generate_supplier_files
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.configuration.service import load_config, load_pipeline_config
@@ -77,10 +79,19 @@ def _generate_sample_data(config: PlatformConfig, args: argparse.Namespace) -> i
     return EXIT_OK
 
 
+def _extract_supplier_products(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = load_pipeline_config(
+        args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
+    )
+    outcomes = extract_all(pipeline_config, run_id=uuid.uuid4().hex[:12])
+    return EXIT_OK if all(outcome.succeeded for outcome in outcomes) else EXIT_ERROR
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
     "generate-sample-data": _generate_sample_data,
+    "extract-supplier-products": _extract_supplier_products,
 }
 
 
@@ -102,6 +113,10 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands = parser.add_subparsers(dest="command", required=True)
     subcommands.add_parser("check-config", help="load and validate the configuration")
     subcommands.add_parser("migrate", help="apply pending database migrations")
+    subcommands.add_parser(
+        "extract-supplier-products",
+        help="read every supplier source and report row counts (no loading yet)",
+    )
 
     generate = subcommands.add_parser(
         "generate-sample-data", help="write synthetic supplier CSV files for development"
