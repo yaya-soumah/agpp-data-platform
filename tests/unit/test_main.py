@@ -166,3 +166,25 @@ def test_extract_supplier_products_fails_when_a_source_is_missing(
 
     assert exit_code == cli.EXIT_ERROR
     assert caplog.text.count("Supplier extraction failed") == 3
+
+
+def test_validate_supplier_products_accepts_slightly_dirty_files(
+    cli_args: list[str], supplier_data_dir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    cli.main([*cli_args, "generate-sample-data", "--rows", "20"])
+
+    exit_code = cli.main([*cli_args, "validate-supplier-products"])
+
+    assert exit_code == cli.EXIT_OK
+    assert "Validation finished" in caplog.text
+
+
+def test_validate_supplier_products_fails_when_the_quality_gate_trips(
+    cli_args: list[str], supplier_data_dir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    cli.main([*cli_args, "generate-sample-data", "--rows", "40", "--bad-ratio", "0.6"])
+
+    exit_code = cli.main([*cli_args, "validate-supplier-products"])
+
+    assert exit_code == cli.EXIT_ERROR
+    assert "Supplier validation failed" in caplog.text
