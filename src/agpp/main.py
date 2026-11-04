@@ -11,6 +11,7 @@ from agpp import __version__
 from agpp.pipelines.supplier_product.config import SupplierProductConfig
 from agpp.pipelines.supplier_product.extraction import extract_all
 from agpp.pipelines.supplier_product.sample_data import generate_supplier_files
+from agpp.pipelines.supplier_product.validation import validate_all
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.configuration.service import load_config, load_pipeline_config
 from agpp.shared.database import create_pool
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_CONFIGURATION_ERROR = 2
+
+
+def _supplier_product_config(args: argparse.Namespace) -> SupplierProductConfig:
+    return load_pipeline_config(
+        args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
+    )
 
 
 def _check_config(config: PlatformConfig, _args: argparse.Namespace) -> int:
@@ -56,9 +63,7 @@ def _ratio(text: str) -> float:
 
 
 def _generate_sample_data(config: PlatformConfig, args: argparse.Namespace) -> int:
-    pipeline_config = load_pipeline_config(
-        args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
-    )
+    pipeline_config = _supplier_product_config(args)
     summaries = generate_supplier_files(
         pipeline_config,
         rows_per_supplier=args.rows,
@@ -80,11 +85,17 @@ def _generate_sample_data(config: PlatformConfig, args: argparse.Namespace) -> i
 
 
 def _extract_supplier_products(config: PlatformConfig, args: argparse.Namespace) -> int:
-    pipeline_config = load_pipeline_config(
-        args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
-    )
+    pipeline_config = _supplier_product_config(args)
     outcomes = extract_all(pipeline_config, run_id=uuid.uuid4().hex[:12])
     return EXIT_OK if all(outcome.succeeded for outcome in outcomes) else EXIT_ERROR
+
+
+def _validate_supplier_products(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _supplier_product_config(args)
+    run_id = uuid.uuid4().hex[:12]
+    extractions = extract_all(pipeline_config, run_id=run_id)
+    validations = validate_all(pipeline_config, extractions, run_id=run_id, now=utc_now())
+    return EXIT_OK if all(outcome.succeeded for outcome in validations) else EXIT_ERROR
 
 
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
@@ -92,6 +103,7 @@ COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "migrate": _migrate,
     "generate-sample-data": _generate_sample_data,
     "extract-supplier-products": _extract_supplier_products,
+    "validate-supplier-products": _validate_supplier_products,
 }
 
 
@@ -116,6 +128,10 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands.add_parser(
         "extract-supplier-products",
         help="read every supplier source and report row counts (no loading yet)",
+    )
+    subcommands.add_parser(
+        "validate-supplier-products",
+        help="extract and validate every supplier file, then report (no loading yet)",
     )
 
     generate = subcommands.add_parser(
