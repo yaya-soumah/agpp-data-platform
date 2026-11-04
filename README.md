@@ -137,6 +137,20 @@ logs the rows and columns found per supplier. Unreadable sources are retried
 that still fails is reported while the others continue, and the command exits
 with status 1. See [ADR-0011](docs/adr/0011-extraction-design.md).
 
+## Supplier Product validation
+
+```bash
+uv run agpp validate-supplier-products
+```
+
+Extracts every supplier file, then checks it in order: schema, row parsing,
+business rules from `config/pipelines/supplier_product.yaml`, duplicates and
+the quality gate (`quality.max_reject_ratio`). Rejected rows are counted per
+check, with the source line and every reason, and a supplier whose file is too
+broken is reported and skipped while the others continue. The command exits
+with status 1 if any supplier failed. See
+[ADR-0012](docs/adr/0012-validation-design.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
