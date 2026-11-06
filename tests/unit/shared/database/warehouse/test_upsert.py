@@ -77,9 +77,13 @@ def test_identifiers_are_quoted() -> None:
         ({"conflict_columns": ["missing"]}, "conflict columns not in columns"),
         ({"update_columns": ["missing"]}, "update columns not in columns"),
         ({"update_columns": ["product_id"]}, "key columns cannot be updated"),
+        ({"newer_column": "missing"}, "newer column not in columns"),
     ],
 )
-def test_invalid_arguments_are_rejected(overrides: dict[str, object], message: str) -> None:
+def test_invalid_arguments_are_rejected(
+    overrides: dict[str, object],
+    message: str,
+) -> None:
     with pytest.raises(ValueError, match=message):
         _statement(**overrides)
 
@@ -91,3 +95,13 @@ def test_rows_must_match_the_column_count() -> None:
 
 def test_unchanged_is_attempted_minus_written() -> None:
     assert UpsertResult(attempted=10, written=3).unchanged == 7
+
+
+def test_updates_can_be_guarded_by_a_newer_column() -> None:
+    text = _statement(columns=[*COLUMNS, "source_updated_at"], newer_column="source_updated_at")
+
+    assert 'AND EXCLUDED."source_updated_at" >= "dim_product"."source_updated_at"' in text
+
+
+def test_there_is_no_guard_by_default() -> None:
+    assert ">=" not in _statement()
