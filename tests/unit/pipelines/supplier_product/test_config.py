@@ -101,3 +101,20 @@ def test_extraction_attempts_must_be_at_least_one() -> None:
 
     with pytest.raises(ValidationError, match="max_attempts"):
         SupplierProductConfig.model_validate(data)
+
+
+def test_loading_settings_come_from_the_yaml(project_root: Path) -> None:
+    config = load_pipeline_config(
+        project_root / "config", "supplier_product", SupplierProductConfig, environ={}
+    )
+
+    assert config.loading.max_attempts == 3
+    assert config.loading.initial_delay_seconds == 1.0
+
+
+def test_loading_attempts_must_be_at_least_one() -> None:
+    data = _data()
+    data["loading"] = {"max_attempts": 0}
+
+    with pytest.raises(ValidationError, match="max_attempts"):
+        SupplierProductConfig.model_validate(data)

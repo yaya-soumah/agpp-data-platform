@@ -35,8 +35,8 @@ class QualityConfig(AgppModel):
     future_tolerance_minutes: int = Field(ge=0)
 
 
-class ExtractionConfig(AgppModel):
-    """How hard to try before a supplier source counts as failed."""
+class RetryConfig(AgppModel):
+    """How hard to try before an operation counts as failed."""
 
     max_attempts: int = Field(default=3, ge=1, le=10)
     initial_delay_seconds: float = Field(default=1.0, ge=0)
@@ -47,7 +47,8 @@ class SupplierProductConfig(AgppModel):
 
     quality: QualityConfig
     suppliers: tuple[SupplierConfig, ...] = Field(min_length=1)
-    extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
+    extraction: RetryConfig = Field(default_factory=RetryConfig)
+    loading: RetryConfig = Field(default_factory=RetryConfig)
 
     @model_validator(mode="after")
     def _unique_supplier_ids(self) -> Self:
