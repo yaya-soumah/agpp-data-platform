@@ -30,12 +30,15 @@ def build_upsert_statement(
     conflict_columns: Sequence[str],
     update_columns: Sequence[str] | None = None,
     audit_column: str | None = "updated_at",
+    newer_column: str | None = None,
 ) -> sql.Composed:
     """Build ``INSERT ... ON CONFLICT`` that only writes rows whose values differ.
 
     ``update_columns=None`` updates every non-key column; an empty list never
     updates (existing rows are left alone). ``audit_column`` is set to ``now()``
     when a row changes; pass ``None`` for tables without one.
+    ``newer_column``, if given, makes an update apply only when the incoming
+    value of that column is not older than the stored one.
     """
     if not columns:
         raise ValueError("columns must not be empty")
@@ -52,6 +55,8 @@ def build_upsert_statement(
     keys_updated = [name for name in update_columns if name in conflict_columns]
     if keys_updated:
         raise ValueError(f"key columns cannot be updated: {keys_updated}")
+    if newer_column is not None and newer_column not in columns:
+        raise ValueError(f"newer column not in columns: {newer_column}")
 
     head = sql.SQL(
         "INSERT INTO {target} ({columns}) VALUES ({values}) ON CONFLICT ({conflict}) "
@@ -77,12 +82,16 @@ def build_upsert_statement(
     incoming = sql.SQL(", ").join(
         sql.SQL("EXCLUDED.{name}").format(name=sql.Identifier(name)) for name in update_columns
     )
-    return head + sql.SQL(
-        "DO UPDATE SET {assignments} WHERE ({current}) IS DISTINCT FROM ({incoming})"
-    ).format(
+    condition = sql.SQL("({current}) IS DISTINCT FROM ({incoming})").format(
+        current=current, incoming=incoming
+    )
+    if newer_column is not None:
+        condition = condition + sql.SQL(" AND EXCLUDED.{name} >= {table}.{name}").format(
+            name=sql.Identifier(newer_column), table=sql.Identifier(table)
+        )
+    return head + sql.SQL("DO UPDATE SET {assignments} WHERE {condition}").format(
         assignments=sql.SQL(", ").join(assignments),
-        current=current,
-        incoming=incoming,
+        condition=condition,
     )
 
 
@@ -103,6 +112,7 @@ def upsert(
     rows: Sequence[Sequence[object]],
     update_columns: Sequence[str] | None = None,
     audit_column: str | None = "updated_at",
+    newer_column: str | None = None,
     batch_size: int = 1000,
 ) -> UpsertResult:
     """Upsert ``rows`` on ``conflict_columns`` using the caller's transaction.
@@ -120,6 +130,7 @@ def upsert(
         conflict_columns=conflict_columns,
         update_columns=update_columns,
         audit_column=audit_column,
+        newer_column=newer_column,
     )
     check_rows(rows, len(columns))
 
