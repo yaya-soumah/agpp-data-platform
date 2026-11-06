@@ -151,6 +151,23 @@ broken is reported and skipped while the others continue. The command exits
 with status 1 if any supplier failed. See
 [ADR-0012](docs/adr/0012-validation-design.md).
 
+## Running the Supplier Product pipeline
+
+```bash
+uv run agpp migrate                 # once, and after pulling new migrations
+uv run agpp run-supplier-product
+```
+
+Runs extraction, validation, transformation and loading for every supplier in
+`config/pipelines/supplier_product.yaml`. Each supplier is loaded in one
+transaction, so a failure leaves no half-written data, and a failing supplier
+does not affect the others. Running it again on the same files changes
+nothing, and an older file never overwrites newer data. Every run and its
+per-supplier result is recorded in `operational.pipeline_runs` and
+`operational.supplier_run_results`; rejected rows are stored in
+`operational.rejected_records`. The command exits with status 1 unless every
+supplier loaded. See [ADR-0014](docs/adr/0014-loading-design.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
