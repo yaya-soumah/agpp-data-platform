@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 
 import agpp.main as cli
+from agpp.pipelines.supplier_product.loading import RunStatus
+from agpp.pipelines.supplier_product.service import RunSummary
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.exceptions import AgppError
 
@@ -188,3 +190,35 @@ def test_validate_supplier_products_fails_when_the_quality_gate_trips(
 
     assert exit_code == cli.EXIT_ERROR
     assert "Supplier validation failed" in caplog.text
+
+
+def test_run_supplier_product_exits_zero_when_the_run_succeeds(
+    cli_args: list[str], supplier_data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _FakePool()
+    monkeypatch.setattr(cli, "create_pool", lambda _config: fake)
+    monkeypatch.setattr(
+        cli,
+        "run_supplier_product",
+        lambda *_args, **_kwargs: RunSummary("run-1", RunStatus.SUCCEEDED, ()),
+    )
+
+    exit_code = cli.main([*cli_args, "run-supplier-product"])
+
+    assert exit_code == cli.EXIT_OK
+    assert fake.closed
+
+
+@pytest.mark.parametrize("status", [RunStatus.PARTIAL, RunStatus.FAILED])
+def test_run_supplier_product_exits_nonzero_when_suppliers_failed(
+    cli_args: list[str],
+    supplier_data_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    status: RunStatus,
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli, "run_supplier_product", lambda *_args, **_kwargs: RunSummary("run-1", status, ())
+    )
+
+    assert cli.main([*cli_args, "run-supplier-product"]) == cli.EXIT_ERROR

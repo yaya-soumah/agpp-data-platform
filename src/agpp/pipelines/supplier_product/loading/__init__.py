@@ -7,11 +7,14 @@ from agpp.pipelines.supplier_product.loading.runs import (
     record_failure,
     start_run,
 )
+from agpp.pipelines.supplier_product.loading.stage import SupplierLoad, load_all
 
 __all__ = [
     "LoadResult",
     "RunStatus",
+    "SupplierLoad",
     "finish_run",
+    "load_all",
     "load_supplier",
     "record_failure",
     "start_run",

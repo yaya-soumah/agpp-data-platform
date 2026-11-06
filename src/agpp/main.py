@@ -10,7 +10,9 @@ from pathlib import Path
 from agpp import __version__
 from agpp.pipelines.supplier_product.config import SupplierProductConfig
 from agpp.pipelines.supplier_product.extraction import extract_all
+from agpp.pipelines.supplier_product.loading import RunStatus
 from agpp.pipelines.supplier_product.sample_data import generate_supplier_files
+from agpp.pipelines.supplier_product.service import run_supplier_product
 from agpp.pipelines.supplier_product.validation import validate_all
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.configuration.service import load_config, load_pipeline_config
@@ -25,6 +27,10 @@ logger = logging.getLogger(__name__)
 EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_CONFIGURATION_ERROR = 2
+
+
+def _new_run_id() -> str:
+    return f"{utc_now():%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:6]}"
 
 
 def _supplier_product_config(args: argparse.Namespace) -> SupplierProductConfig:
@@ -86,16 +92,26 @@ def _generate_sample_data(config: PlatformConfig, args: argparse.Namespace) -> i
 
 def _extract_supplier_products(config: PlatformConfig, args: argparse.Namespace) -> int:
     pipeline_config = _supplier_product_config(args)
-    outcomes = extract_all(pipeline_config, run_id=uuid.uuid4().hex[:12])
+    outcomes = extract_all(pipeline_config, run_id=_new_run_id())
     return EXIT_OK if all(outcome.succeeded for outcome in outcomes) else EXIT_ERROR
 
 
 def _validate_supplier_products(config: PlatformConfig, args: argparse.Namespace) -> int:
     pipeline_config = _supplier_product_config(args)
-    run_id = uuid.uuid4().hex[:12]
+    run_id = _new_run_id()
     extractions = extract_all(pipeline_config, run_id=run_id)
     validations = validate_all(pipeline_config, extractions, run_id=run_id, now=utc_now())
     return EXIT_OK if all(outcome.succeeded for outcome in validations) else EXIT_ERROR
+
+
+def _run_supplier_product(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _supplier_product_config(args)
+    pool = create_pool(config.database)
+    try:
+        summary = run_supplier_product(pool, pipeline_config, run_id=_new_run_id(), now=utc_now())
+    finally:
+        pool.close()
+    return EXIT_OK if summary.status is RunStatus.SUCCEEDED else EXIT_ERROR
 
 
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
@@ -104,6 +120,7 @@ COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "generate-sample-data": _generate_sample_data,
     "extract-supplier-products": _extract_supplier_products,
     "validate-supplier-products": _validate_supplier_products,
+    "run-supplier-product": _run_supplier_product,
 }
 
 
@@ -132,6 +149,11 @@ def build_parser() -> argparse.ArgumentParser:
     subcommands.add_parser(
         "validate-supplier-products",
         help="extract and validate every supplier file, then report (no loading yet)",
+    )
+
+    subcommands.add_parser(
+        "run-supplier-product",
+        help="run the whole Supplier Product pipeline and load the warehouse",
     )
 
     generate = subcommands.add_parser(
