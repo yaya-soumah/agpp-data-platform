@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from agpp.shared.database import Pool
+from agpp.shared.database.migrations import apply_migrations
 from agpp.shared.logging import reset_logging
 
 _TESTS_ROOT = Path(__file__).resolve().parent
@@ -18,6 +20,13 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         layer = item.path.resolve().relative_to(_TESTS_ROOT).parts[0]
         if layer in {"unit", "integration"}:
             item.add_marker(getattr(pytest.mark, layer))
+
+
+@pytest.fixture
+def warehouse(scratch_pool: Pool, project_root: Path) -> Pool:
+    """A scratch database with every migration applied."""
+    apply_migrations(scratch_pool, project_root / "sql" / "migrations")
+    return scratch_pool
 
 
 @pytest.fixture(scope="session")

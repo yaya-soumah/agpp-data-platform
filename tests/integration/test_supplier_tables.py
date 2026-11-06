@@ -17,12 +17,6 @@ SUPPLIER_COLUMNS = ["supplier_id", "supplier_name", "country"]
 SUPPLIER = ("SUP-001", "Alpine Components", "LU")
 
 
-@pytest.fixture
-def warehouse(scratch_pool: Pool, project_root: Path) -> Pool:
-    apply_migrations(scratch_pool, project_root / "sql" / "migrations")
-    return scratch_pool
-
-
 def _load_supplier(pool: Pool, row: tuple[str, str, str] = SUPPLIER) -> int:
     """Upsert the supplier and return the number of rows written."""
     with connection(pool) as conn:
