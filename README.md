@@ -1,5 +1,7 @@
 # AGPP Data Platform
 
+[![CI](https://github.com/yaya-soumah/agpp-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/yaya-soumah/agpp-data-platform/actions/workflows/ci.yml)
+
 A production-style data platform for the fictitious company AGPP, built as
 an engineering portfolio. Three pipelines (Supplier Product, Customer
 Orders, Inventory) share one platform, one warehouse and one set of
@@ -178,6 +180,9 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy
 ```
+CI runs two jobs on every pull request: `quality` (the four gates above) and
+`integration` (`pytest -m integration` against a PostgreSQL service
+container), so the idempotency and rollback tests are verified on every change.
 
 ## Testing
 
