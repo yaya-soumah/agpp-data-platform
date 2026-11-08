@@ -19,7 +19,7 @@ def test_pool_serves_queries(pool: Pool) -> None:
     with connection(pool) as conn:
         row = conn.execute("SELECT 1").fetchone()
 
-    assert row == (2,)
+    assert row == (1,)
 
 
 def test_ping_succeeds(pool: Pool) -> None:
