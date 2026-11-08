@@ -60,3 +60,18 @@ jobs:
       - run: uv python install 3.12
       - run: uv sync --locked
       - run: uv run pytest -m integration --no-cov
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build --tag agpp-data-platform:ci .
+      - name: The image starts
+        run: docker run --rm agpp-data-platform:ci --version
+      - name: The image runs as a non-root user
+        run: test "$(docker run --rm --entrypoint id agpp-data-platform:ci -u)" = "10001"
+      - name: The image contains no secrets or tests
+        run: >-
+          docker run --rm --entrypoint sh agpp-data-platform:ci
+          -c 'test ! -e /app/.env && test ! -e /app/tests'
