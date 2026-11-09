@@ -7,6 +7,7 @@ from pydantic import Field, StringConstraints, model_validator
 
 from agpp.pipelines.supplier_product.models import Supplier
 from agpp.shared.models import AgppModel
+from agpp.shared.resilience.config import RetryConfig
 
 CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
 
@@ -33,13 +34,6 @@ class QualityConfig(AgppModel):
     allowed_currencies: tuple[CurrencyCode, ...] = Field(min_length=1)
     max_unit_price: Decimal = Field(gt=0)
     future_tolerance_minutes: int = Field(ge=0)
-
-
-class RetryConfig(AgppModel):
-    """How hard to try before an operation counts as failed."""
-
-    max_attempts: int = Field(default=3, ge=1, le=10)
-    initial_delay_seconds: float = Field(default=1.0, ge=0)
 
 
 class SupplierProductConfig(AgppModel):
