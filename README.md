@@ -22,7 +22,41 @@ Each pipeline follows the same lifecycle: **extract → validate →
 transform → load**. Business logic never orchestrates itself, nothing
 environment-specific lives in code, and re-running a pipeline with the
 same input never creates inconsistent data. The reasoning behind each
-choice is recorded in [`docs/adr/`](docs/adr/).
+choice is recorded in [`docs/adr/`](docs/adr/README.md).
+
+## Architecture
+
+Every pipeline follows the same lifecycle. The Supplier Product pipeline is
+implemented end to end.
+
+```mermaid
+flowchart LR
+    F[Supplier files] --> E[Extraction]
+    E --> V[Validation]
+    V --> T[Transformation]
+    T --> L[Loading]
+    L --> W[("warehouse<br/>dim_supplier, dim_product, dim_date")]
+    V -. rejected rows .-> R[("operational<br/>rejected_records")]
+    L --> B[("operational<br/>pipeline_runs, supplier_run_results")]
+```
+
+- **Isolation.** Each supplier is processed independently at every stage; one
+  failing supplier never stops the others.
+- **Atomic loading.** One transaction per supplier; a failure leaves no
+  half-written data.
+- **Idempotent.** Running the pipeline again on the same files writes nothing,
+  and an older file never overwrites newer data.
+- **Observable.** Every run is recorded with its per-supplier result, and
+  every rejected row is stored with its source line and reasons.
+
+```mermaid
+erDiagram
+    dim_supplier ||--o{ dim_product : supplier_key
+    pipeline_runs ||--o{ supplier_run_results : run_id
+```
+
+The reasoning behind each choice is in the
+[architecture decision records](docs/adr/README.md).
 
 ## Requirements
 
@@ -170,6 +204,19 @@ per-supplier result is recorded in `operational.pipeline_runs` and
 `operational.rejected_records`. The command exits with status 1 unless every
 supplier loaded. See [ADR-0014](docs/adr/0014-loading-design.md).
 
+## Running in Docker
+
+```bash
+docker compose up -d                                   # PostgreSQL
+docker compose run --rm app migrate
+docker compose run --rm app generate-sample-data --rows 100
+docker compose run --rm app run-supplier-product
+```
+
+The image runs as a non-root user with the production configuration (JSON
+logs); credentials come from the environment, never from the image. See
+[ADR-0015](docs/adr/0015-containerization.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
@@ -207,10 +254,11 @@ uv run pre-commit install
 
 | Path | Purpose |
 |---|---|
-| `src/agpp/pipelines/` | One folder per pipeline, each owning its business logic |
-| `src/agpp/shared/` | Generic infrastructure: configuration, logging, exceptions, database |
-| `config/` | Environment-specific YAML configuration (no secrets) |
-| `sql/` | Warehouse DDL and migrations |
+| `src/agpp/pipelines/` | One package per pipeline, each owning its business logic |
+| `src/agpp/shared/` | Generic infrastructure: configuration, logging, exceptions, database, retry, dates |
+| `config/` | Environment YAML and `pipelines/<name>.yaml` (no secrets) |
+| `sql/migrations` | Versioned SQL migrations |
+| `Dockerfile`, `docker-compose.yml` | Container image and local services |
 | `tests/` | Unit and integration tests |
 | `docs/` | Architecture decision records and documentation |
 | `data/` | Local sample and generated data (not committed) |
