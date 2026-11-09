@@ -18,5 +18,7 @@
 | [0013](0013-transformation-design.md) | Transformation design |
 | [0014](0014-loading-design.md) | Loading design |
 | [0015](0015-containerization.md) | Containerization |
+| [0016](0016-customer-orders-pipeline-contract.md) | Customer Orders pipeline contract |
+| [0017](0017-shared-building-blocks.md) | Shared building blocks |
 
 New decisions copy [the template](0000-template.md) and take the next number.
