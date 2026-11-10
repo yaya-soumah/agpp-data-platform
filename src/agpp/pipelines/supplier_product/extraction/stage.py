@@ -10,7 +10,7 @@ from agpp.pipelines.supplier_product.extraction.base import ExtractionResult, Ex
 from agpp.pipelines.supplier_product.extraction.factory import create_extractor
 from agpp.shared.exceptions import AgppError
 from agpp.shared.logging import get_pipeline_logger
-from agpp.shared.resilience.retry import RetryPolicy, call_with_retry
+from agpp.shared.resilience.retry import call_with_retry
 
 
 @dataclass(frozen=True)
@@ -39,10 +39,7 @@ def extract_all(
     continue. Errors that are not ``AgppError`` (bugs) propagate.
     """
     log = get_pipeline_logger(PIPELINE_NAME, run_id)
-    policy = RetryPolicy(
-        max_attempts=config.extraction.max_attempts,
-        initial_delay=config.extraction.initial_delay_seconds,
-    )
+    policy = config.extraction.policy()
     log.info("Extraction started", extra={"suppliers": len(config.suppliers)})
 
     outcomes: list[SupplierExtraction] = []

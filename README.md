@@ -226,7 +226,9 @@ uv run pytest
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
+uv run lint-imports
 ```
+lint-imports` enforces the architecture boundaries
 CI runs two jobs on every pull request: `quality` (the four gates above) and
 `integration` (`pytest -m integration` against a PostgreSQL service
 container), so the idempotency and rollback tests are verified on every change.

@@ -24,6 +24,7 @@ from agpp.pipelines.supplier_product.validation import validate_all
 from agpp.shared.database import Pool
 from agpp.shared.exceptions import AgppError
 from agpp.shared.logging import get_pipeline_logger
+from agpp.shared.runs import run_status_for
 
 
 @dataclass(frozen=True)
@@ -96,11 +97,7 @@ def run_supplier_product(
 
 def _status(outcomes: Sequence[SupplierOutcome]) -> RunStatus:
     succeeded = sum(1 for outcome in outcomes if outcome.succeeded)
-    if succeeded == len(outcomes):
-        return RunStatus.SUCCEEDED
-    if succeeded == 0:
-        return RunStatus.FAILED
-    return RunStatus.PARTIAL
+    return run_status_for(succeeded, len(outcomes))
 
 
 def _mark_failed(pool: Pool, run_id: str) -> None:
