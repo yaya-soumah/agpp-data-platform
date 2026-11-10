@@ -20,6 +20,7 @@ dev = [
     "mypy>=1.13",
     "pre-commit",
     "types-pyyaml>=6.0.12.20260906",
+    "import-linter>=2.0",
 ]
 
 [project.scripts]
@@ -67,4 +68,16 @@ source = ["agpp"]
 show_missing = true
 exclude_also = [
     "if __name__ == .__main__.:",
+]
+
+[tool.importlinter]
+root_package = "agpp"
+
+[[tool.importlinter.contracts]]
+name = "Layers: main, then pipelines, then shared code"
+type = "layers"
+layers = [
+    "agpp.main",
+    "agpp.pipelines",
+    "agpp.shared",
 ]
