@@ -1,0 +1,19 @@
+# Customer Orders pipeline settings (ADR-0016).
+# The path may use ${AGPP_DATA_DIR:-data} to move the data folder per environment.
+quality:
+  max_reject_ratio: 0.05
+  allowed_currencies: [EUR, USD, GBP, CHF]
+  max_line_amount: 1000000
+  future_tolerance_minutes: 5
+
+extraction:
+  max_attempts: 3
+  initial_delay_seconds: 1.0
+
+loading:
+  max_attempts: 3
+  initial_delay_seconds: 1.0
+
+source:
+  type: csv
+  path: ${AGPP_DATA_DIR:-data}/incoming/customer_orders/orders.csv

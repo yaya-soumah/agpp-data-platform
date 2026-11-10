@@ -1,24 +1,15 @@
 """Configuration model of the Supplier Product pipeline (ADR-0010)."""
 
 from decimal import Decimal
-from typing import Annotated, Literal, Self
+from typing import Self
 
-from pydantic import Field, StringConstraints, model_validator
+from pydantic import Field, model_validator
 
 from agpp.pipelines.supplier_product.models import Supplier
+from agpp.shared.extraction import CsvSource
 from agpp.shared.models import AgppModel
+from agpp.shared.models.types import CurrencyCode
 from agpp.shared.resilience.config import RetryConfig
-
-CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
-
-
-class CsvSource(AgppModel):
-    """A supplier file in CSV format."""
-
-    type: Literal["csv"]
-    path: str = Field(min_length=1)
-    delimiter: str = Field(default=",", min_length=1, max_length=1)
-    encoding: str = "utf-8"
 
 
 class SupplierConfig(Supplier):

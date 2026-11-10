@@ -81,3 +81,11 @@ layers = [
     "agpp.pipelines",
     "agpp.shared",
 ]
+
+[[tool.importlinter.contracts]]
+name = "Pipelines are independent of each other"
+type = "independence"
+modules = [
+    "agpp.pipelines.supplier_product",
+    "agpp.pipelines.customer_orders",
+]
