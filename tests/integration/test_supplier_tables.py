@@ -188,7 +188,7 @@ def _insert_rejected(pool: Pool, line: int = 7, stage: str = "parsing") -> None:
     with connection(pool) as conn:
         conn.execute(
             "INSERT INTO operational.rejected_records"
-            " (run_id, pipeline, supplier_id, line_number, stage, reasons, raw_values)"
+            " (run_id, pipeline, source_id, line_number, stage, reasons, raw_values)"
             " VALUES ('run-1', 'supplier_product', 'SUP-001', %s, %s, %s, %s)",
             (line, stage, Jsonb(["unit_price: bad"]), Jsonb({"unit_price": "x"})),
         )
