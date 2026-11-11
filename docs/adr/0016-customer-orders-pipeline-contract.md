@@ -89,3 +89,10 @@ without changing the Supplier Product pipeline (Decision 14).
 - Models, configuration, extraction, validation.
 - Migrations, transformation and loading.
 - Service, command, sample data and end-to-end tests.
+
+## Amendments
+
+- 2026-11-11: `dim_customer` also carries `source_updated_at`, so the guard of
+  ADR-0014 (older data never overwrites newer data) applies to customers too.
+  `fact_order_line` also carries `ordered_at`, keeping the time of day that
+  `date_key` drops.
