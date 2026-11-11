@@ -1,17 +1,17 @@
 """Load one supplier's validated, transformed data into the warehouse (ADR-0014)."""
 
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from psycopg import Connection
 from psycopg.rows import TupleRow
-from psycopg.types.json import Jsonb
 
 from agpp.pipelines.supplier_product import PIPELINE_NAME
 from agpp.pipelines.supplier_product.transformation import TransformedBatch
-from agpp.pipelines.supplier_product.validation import RejectedRecord, ValidationResult
+from agpp.pipelines.supplier_product.validation import ValidationResult
 from agpp.shared.database import Pool, connection
+from agpp.shared.database.rejects import store_rejects
 from agpp.shared.database.warehouse import UpsertResult, upsert
 from agpp.shared.exceptions import (
     DatabaseConnectionError,
@@ -127,7 +127,9 @@ def _load_once(
                 for row in batch.products
             ],
         )
-        rejects_stored = _store_rejects(conn, run_id, validation.rejected)
+        rejects_stored = store_rejects(
+            conn, run_id=run_id, pipeline=PIPELINE_NAME, rejected=validation.rejected
+        )
         _record_result(conn, run_id, supplier.supplier_id, validation, products)
     return LoadResult(
         supplier_id=supplier.supplier_id,
@@ -147,34 +149,6 @@ def _supplier_key(conn: Connection[TupleRow], supplier_id: str) -> int:
             "Supplier row missing right after its upsert", context={"supplier_id": supplier_id}
         )
     return int(row[0])
-
-
-def _store_rejects(
-    conn: Connection[TupleRow], run_id: str, rejected: Sequence[RejectedRecord]
-) -> int:
-    if not rejected:
-        return 0
-    rows = [
-        (
-            run_id,
-            PIPELINE_NAME,
-            record.supplier_id,
-            record.line_number,
-            record.stage.value,
-            Jsonb(list(record.reasons)),
-            Jsonb(dict(record.raw)),
-        )
-        for record in rejected
-    ]
-    with conn.cursor() as cursor:
-        cursor.executemany(
-            "INSERT INTO operational.rejected_records"
-            " (run_id, pipeline, supplier_id, line_number, stage, reasons, raw_values)"
-            " VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            " ON CONFLICT (run_id, pipeline, supplier_id, line_number) DO NOTHING",
-            rows,
-        )
-        return max(cursor.rowcount, 0)
 
 
 def _record_result(

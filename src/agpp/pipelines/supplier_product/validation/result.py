@@ -2,17 +2,11 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import StrEnum
 
 from agpp.pipelines.supplier_product.models import SupplierProduct
+from agpp.shared.validation import RejectedRecord, RejectionStage
 
-
-class RejectionStage(StrEnum):
-    """The check that rejected a record."""
-
-    PARSING = "parsing"
-    BUSINESS = "business"
-    DUPLICATE = "duplicate"
+__all__ = ["ParsedRecord", "RejectedRecord", "RejectionStage", "ValidationResult"]
 
 
 @dataclass(frozen=True)
@@ -22,17 +16,6 @@ class ParsedRecord:
     line_number: int
     raw: Mapping[str, str]
     product: SupplierProduct
-
-
-@dataclass(frozen=True)
-class RejectedRecord:
-    """A record that failed a check, with every reason found at that check."""
-
-    supplier_id: str
-    line_number: int
-    stage: RejectionStage
-    reasons: tuple[str, ...]
-    raw: Mapping[str, str]
 
 
 @dataclass(frozen=True)
