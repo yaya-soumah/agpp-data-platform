@@ -8,6 +8,9 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from agpp import __version__
+from agpp.pipelines.customer_orders.config import CustomerOrdersConfig
+from agpp.pipelines.customer_orders.sample_data import generate_orders_file, known_product_ids
+from agpp.pipelines.customer_orders.service import run_customer_orders
 from agpp.pipelines.supplier_product.config import SupplierProductConfig
 from agpp.pipelines.supplier_product.extraction import extract_all
 from agpp.pipelines.supplier_product.loading import RunStatus
@@ -36,6 +39,12 @@ def _new_run_id() -> str:
 def _supplier_product_config(args: argparse.Namespace) -> SupplierProductConfig:
     return load_pipeline_config(
         args.config_dir, "supplier_product", SupplierProductConfig, env_file=args.env_file
+    )
+
+
+def _customer_orders_config(args: argparse.Namespace) -> CustomerOrdersConfig:
+    return load_pipeline_config(
+        args.config_dir, "customer_orders", CustomerOrdersConfig, env_file=args.env_file
     )
 
 
@@ -114,6 +123,47 @@ def _run_supplier_product(config: PlatformConfig, args: argparse.Namespace) -> i
     return EXIT_OK if summary.status is RunStatus.SUCCEEDED else EXIT_ERROR
 
 
+def _run_customer_orders(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _customer_orders_config(args)
+    pool = create_pool(config.database)
+    try:
+        summary = run_customer_orders(pool, pipeline_config, run_id=_new_run_id(), now=utc_now())
+    finally:
+        pool.close()
+    return EXIT_OK if summary.status is RunStatus.SUCCEEDED else EXIT_ERROR
+
+
+def _generate_sample_orders(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _customer_orders_config(args)
+    pool = create_pool(config.database)
+    try:
+        product_ids = known_product_ids(pool)
+    finally:
+        pool.close()
+    if not product_ids:
+        logger.error("No products in the warehouse; run run-supplier-product first")
+        return EXIT_ERROR
+    summary = generate_orders_file(
+        pipeline_config,
+        product_ids=product_ids,
+        lines=args.lines,
+        bad_row_ratio=args.bad_ratio,
+        unknown_product_ratio=args.unknown_ratio,
+        seed=args.seed,
+        now=utc_now(),
+    )
+    logger.info(
+        "Generated order file",
+        extra={
+            "path": str(summary.path),
+            "rows": summary.rows,
+            "defective_rows": summary.defective_rows,
+            "unknown_product_lines": summary.unknown_product_lines,
+        },
+    )
+    return EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
@@ -121,6 +171,8 @@ COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "extract-supplier-products": _extract_supplier_products,
     "validate-supplier-products": _validate_supplier_products,
     "run-supplier-product": _run_supplier_product,
+    "run-customer-orders": _run_customer_orders,
+    "generate-sample-orders": _generate_sample_orders,
 }
 
 
@@ -164,6 +216,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--bad-ratio", type=_ratio, default=0.05, help="share of deliberately bad rows"
     )
     generate.add_argument("--seed", type=int, default=42, help="seed for reproducible files")
+
+    subcommands.add_parser(
+        "run-customer-orders",
+        help="run the whole Customer Orders pipeline and load the warehouse",
+    )
+    orders = subcommands.add_parser(
+        "generate-sample-orders",
+        help="write a synthetic order file that refers to the products in the warehouse",
+    )
+    orders.add_argument("--lines", type=_positive_int, default=300, help="order lines")
+    orders.add_argument(
+        "--bad-ratio", type=_ratio, default=0.02, help="share of deliberately bad rows"
+    )
+    orders.add_argument(
+        "--unknown-ratio",
+        type=_ratio,
+        default=0.05,
+        help="share of lines that refer to products the warehouse does not know",
+    )
+    orders.add_argument("--seed", type=int, default=42, help="seed for a reproducible file")
 
     return parser
 
