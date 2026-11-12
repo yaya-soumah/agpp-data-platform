@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 import agpp.main as cli
+from agpp.pipelines.customer_orders.service import RunSummary as OrdersRunSummary
 from agpp.pipelines.supplier_product.loading import RunStatus
 from agpp.pipelines.supplier_product.service import RunSummary
 from agpp.shared.configuration.models import PlatformConfig
@@ -55,6 +56,21 @@ def supplier_data_dir(
     (pipelines / "supplier_product.yaml").write_text(text, encoding="utf-8")
     monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
     return tmp_path / "data" / "incoming" / "supplier_product"
+
+
+@pytest.fixture
+def orders_data_dir(
+    cli_args: list[str], tmp_path: Path, project_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> Path:
+    pipelines = Path(cli_args[1]) / "pipelines"
+    pipelines.mkdir(exist_ok=True)
+    text = (project_root / "config" / "pipelines" / "customer_orders.yaml").read_text(
+        encoding="utf-8"
+    )
+    text = text.replace("initial_delay_seconds: 1.0", "initial_delay_seconds: 0")
+    (pipelines / "customer_orders.yaml").write_text(text, encoding="utf-8")
+    monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
+    return tmp_path / "data" / "incoming" / "customer_orders"
 
 
 class _FakePool:
@@ -222,3 +238,71 @@ def test_run_supplier_product_exits_nonzero_when_suppliers_failed(
     )
 
     assert cli.main([*cli_args, "run-supplier-product"]) == cli.EXIT_ERROR
+
+
+def test_run_customer_orders_exits_zero_when_the_run_succeeds(
+    cli_args: list[str], orders_data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _FakePool()
+    monkeypatch.setattr(cli, "create_pool", lambda _config: fake)
+    monkeypatch.setattr(
+        cli,
+        "run_customer_orders",
+        lambda *_args, **_kwargs: OrdersRunSummary("run-1", RunStatus.SUCCEEDED),
+    )
+
+    assert cli.main([*cli_args, "run-customer-orders"]) == cli.EXIT_OK
+    assert fake.closed
+
+
+def test_run_customer_orders_exits_nonzero_when_the_run_failed(
+    cli_args: list[str], orders_data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli,
+        "run_customer_orders",
+        lambda *_args, **_kwargs: OrdersRunSummary("run-1", RunStatus.FAILED),
+    )
+
+    assert cli.main([*cli_args, "run-customer-orders"]) == cli.EXIT_ERROR
+
+
+def test_generate_sample_orders_writes_the_file(
+    cli_args: list[str], orders_data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli, "known_product_ids", lambda _pool: [f"SUP-001:S1-{n:05d}" for n in range(1, 6)]
+    )
+
+    exit_code = cli.main([*cli_args, "generate-sample-orders", "--lines", "30"])
+
+    assert exit_code == cli.EXIT_OK
+    assert (orders_data_dir / "orders.csv").is_file()
+
+
+def test_generate_sample_orders_needs_products_in_the_warehouse(
+    cli_args: list[str],
+    orders_data_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(cli, "known_product_ids", lambda _pool: [])
+
+    exit_code = cli.main([*cli_args, "generate-sample-orders"])
+
+    assert exit_code == cli.EXIT_ERROR
+    assert "run run-supplier-product first" in caplog.text
+    assert not (orders_data_dir / "orders.csv").exists()
+
+
+def test_generate_sample_orders_rejects_a_bad_unknown_ratio(
+    cli_args: list[str], capsys: pytest.CaptureFixture[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main([*cli_args, "generate-sample-orders", "--unknown-ratio", "2"])
+
+    assert exit_info.value.code == 2
+    assert "between 0 and 1" in capsys.readouterr().err
