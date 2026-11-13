@@ -31,16 +31,15 @@ implemented end to end.
 
 ```mermaid
 flowchart LR
-    F[Supplier files] --> E[Extraction]
-    E --> V[Validation]
-    V --> T[Transformation]
-    T --> L[Loading]
-    L --> W[("warehouse<br/>dim_supplier, dim_product, dim_date")]
-    V -. rejected rows .-> R[("operational<br/>rejected_records")]
-    L --> B[("operational<br/>pipeline_runs, supplier_run_results")]
+    SF[Supplier files] --> SP[Supplier Product pipeline]
+    OF[Order file] --> CO[Customer Orders pipeline]
+    SP --> DS[("warehouse<br/>dim_supplier, dim_product")]
+    CO --> DC[("warehouse<br/>dim_customer, fact_order_line")]
+    DS -. product keys .-> CO
+    SP --> OP[("operational<br/>runs, results, rejected_records")]
+    CO --> OP
 ```
-
-- **Isolation.** Each supplier is processed independently at every stage; one
+- **Isolation.** Supplier Product processes each supplier independently; Customer Orders processes one file per run; one
   failing supplier never stops the others.
 - **Atomic loading.** One transaction per supplier; a failure leaves no
   half-written data.
@@ -48,11 +47,16 @@ flowchart LR
   and an older file never overwrites newer data.
 - **Observable.** Every run is recorded with its per-supplier result, and
   every rejected row is stored with its source line and reasons.
+- **Late reference data.** An order line whose product is not in the catalog yet is loaded against the unknown product and corrected on the next run.
 
 ```mermaid
 erDiagram
     dim_supplier ||--o{ dim_product : supplier_key
+    dim_customer ||--o{ fact_order_line : customer_key
+    dim_product ||--o{ fact_order_line : product_key
+    dim_date ||--o{ fact_order_line : date_key
     pipeline_runs ||--o{ supplier_run_results : run_id
+    pipeline_runs ||--o| order_run_results : run_id
 ```
 
 The reasoning behind each choice is in the
@@ -203,6 +207,22 @@ per-supplier result is recorded in `operational.pipeline_runs` and
 `operational.supplier_run_results`; rejected rows are stored in
 `operational.rejected_records`. The command exits with status 1 unless every
 supplier loaded. See [ADR-0014](docs/adr/0014-loading-design.md).
+
+## Running the Customer Orders pipeline
+
+Orders refer to products, so run the Supplier Product pipeline first (a
+different order is safe, but those lines are loaded as "unknown product").
+
+```bash
+uv run agpp generate-sample-orders --lines 300   # needs products in the warehouse
+uv run agpp run-customer-orders
+```
+
+The command extracts, validates, transforms and loads the order file from
+`config/pipelines/customer_orders.yaml` in one transaction; any failure fails
+the run, which is recorded with its stage in `operational.order_run_results`.
+Running it again on the same file changes nothing, and an older update never
+overwrites a newer one. See [ADR-0016](docs/adr/0016-customer-orders-pipeline-contract.md).
 
 ## Running in Docker
 
