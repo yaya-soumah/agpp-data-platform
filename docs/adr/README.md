@@ -20,5 +20,6 @@
 | [0015](0015-containerization.md) | Containerization |
 | [0016](0016-customer-orders-pipeline-contract.md) | Customer Orders pipeline contract |
 | [0017](0017-shared-building-blocks.md) | Shared building blocks |
+| [0018](0018-inventory-pipeline-contract.md) | Inventory pipeline contract |
 
 New decisions copy [the template](0000-template.md) and take the next number.

@@ -88,4 +88,5 @@ type = "independence"
 modules = [
     "agpp.pipelines.supplier_product",
     "agpp.pipelines.customer_orders",
+    "agpp.pipelines.inventory",
 ]

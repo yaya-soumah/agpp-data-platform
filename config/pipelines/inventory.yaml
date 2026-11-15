@@ -1,0 +1,23 @@
+# Inventory pipeline settings (ADR-0018).
+# The stock feed address and token come from the environment; the token is a secret
+# and must never be written here.
+quality:
+  max_reject_ratio: 0.05
+  max_snapshot_age_hours: 26
+  future_tolerance_minutes: 5
+
+extraction:
+  max_attempts: 3
+  initial_delay_seconds: 1.0
+
+loading:
+  max_attempts: 3
+  initial_delay_seconds: 1.0
+
+source:
+  type: api
+  base_url: ${INVENTORY_API_URL:-http://localhost:8080}
+  path: /v1/stock
+  token: ${INVENTORY_API_TOKEN:-}
+  timeout_seconds: 10
+  page_size: 500
