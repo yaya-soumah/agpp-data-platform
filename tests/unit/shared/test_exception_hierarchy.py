@@ -9,6 +9,7 @@ from agpp.shared.exceptions import (
     ExtractionError,
     InfrastructureError,
     InvalidConfigurationError,
+    InvalidSnapshotError,
     LoadingError,
     MigrationError,
     QualityThresholdExceededError,
@@ -37,6 +38,7 @@ HIERARCHY: list[tuple[type[AgppError], type[AgppError], str, bool]] = [
     (TransientInfrastructureError, InfrastructureError, "infrastructure", True),
     (MigrationError, InfrastructureError, "infrastructure", False),
     (DatabaseConnectionError, TransientInfrastructureError, "infrastructure", True),
+    (InvalidSnapshotError, DataValidationError, "validation", False),
 ]
 
 

@@ -22,6 +22,7 @@ from agpp.shared.exceptions.loading import LoadingError, WarehouseWriteError
 from agpp.shared.exceptions.transformation import TransformationError
 from agpp.shared.exceptions.validation import (
     DataValidationError,
+    InvalidSnapshotError,
     QualityThresholdExceededError,
     SchemaValidationError,
 )
@@ -35,6 +36,7 @@ __all__ = [
     "ExtractionError",
     "InfrastructureError",
     "InvalidConfigurationError",
+    "InvalidSnapshotError",
     "LoadingError",
     "MigrationError",
     "MissingEnvironmentVariableError",
