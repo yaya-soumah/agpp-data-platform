@@ -21,3 +21,7 @@ class SchemaValidationError(DataValidationError):
 
 class QualityThresholdExceededError(DataValidationError):
     """Too many records were rejected for the run to continue."""
+
+
+class InvalidSnapshotError(DataValidationError):
+    """The snapshot time of a feed is unreadable, too old or in the future."""
