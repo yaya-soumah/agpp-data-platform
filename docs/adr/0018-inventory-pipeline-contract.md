@@ -102,3 +102,12 @@ pipeline and the first with a non-file source; it must not change the other two.
 - Day 18 PR 2: the shared API reader.
 - Day 19: extraction and validation. Day 20: tables, transformation, loading.
 - Day 21: service, a local mock feed, commands and end-to-end tests.
+
+## Amendments
+
+- 2026-11-16: `dim_location` carries `source_updated_at` (the ADR-0014 guard applies to
+  locations). The fact is guarded by `snapshot_at` instead: a row is updated only by a snapshot
+  that is not older than the one stored, so a late older feed cannot overwrite a later one and
+  the day's row always shows the last snapshot of the day. The fact also stores `product_key`
+  next to `product_id`, and the run result records `snapshot_at` and the number of rows below
+  the reorder point.
