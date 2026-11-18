@@ -12,7 +12,7 @@ from agpp.pipelines.customer_orders.transformation import TransformedOrders
 from agpp.pipelines.customer_orders.validation import ValidationResult
 from agpp.shared.database import Pool, connection
 from agpp.shared.database.rejects import store_rejects
-from agpp.shared.database.warehouse import UpsertResult, upsert
+from agpp.shared.database.warehouse import UpsertResult, resolve_keys, upsert
 from agpp.shared.exceptions import (
     DatabaseConnectionError,
     InfrastructureError,
@@ -108,8 +108,22 @@ def _load_once(
                 for c in transformed.customers
             ],
         )
-        customer_keys = _customer_keys(conn, [c.customer_id for c in transformed.customers])
-        product_keys = _product_keys(conn, sorted({line.product_id for line in transformed.lines}))
+        customer_keys = resolve_keys(
+            conn,
+            schema="warehouse",
+            table="dim_customer",
+            business_key="customer_id",
+            surrogate_key="customer_key",
+            values=[c.customer_id for c in transformed.customers],
+        )
+        product_keys = resolve_keys(
+            conn,
+            schema="warehouse",
+            table="dim_product",
+            business_key="product_id",
+            surrogate_key="product_key",
+            values=sorted({line.product_id for line in transformed.lines}),
+        )
 
         rows: list[tuple[object, ...]] = []
         unknown_product_lines = 0
@@ -163,27 +177,6 @@ def _load_once(
         unknown_product_lines=unknown_product_lines,
         rejects_stored=rejects_stored,
     )
-
-
-def _customer_keys(conn: Connection[TupleRow], customer_ids: list[str]) -> dict[str, int]:
-    if not customer_ids:
-        return {}
-    rows = conn.execute(
-        "SELECT customer_id, customer_key FROM warehouse.dim_customer WHERE customer_id = ANY(%s)",
-        (customer_ids,),
-    ).fetchall()
-    return {str(customer_id): int(key) for customer_id, key in rows}
-
-
-def _product_keys(conn: Connection[TupleRow], product_ids: list[str]) -> dict[str, int]:
-    """Look products up; they belong to the Supplier Product pipeline and are never written here."""
-    if not product_ids:
-        return {}
-    rows = conn.execute(
-        "SELECT product_id, product_key FROM warehouse.dim_product WHERE product_id = ANY(%s)",
-        (product_ids,),
-    ).fetchall()
-    return {str(product_id): int(key) for product_id, key in rows}
 
 
 def _record_result(

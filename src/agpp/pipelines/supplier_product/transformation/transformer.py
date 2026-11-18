@@ -10,13 +10,9 @@ from agpp.pipelines.supplier_product.transformation.rows import (
     TransformedBatch,
 )
 from agpp.shared.exceptions import TransformationError
+from agpp.shared.text import collapse_whitespace
 
 _PRICE_STEP = Decimal("0.0001")
-
-
-def collapse_whitespace(text: str) -> str:
-    """Replace every run of whitespace with a single space."""
-    return " ".join(text.split())
 
 
 def to_product_row(product: SupplierProduct) -> ProductRow:

@@ -11,13 +11,9 @@ from agpp.pipelines.customer_orders.transformation.rows import (
 )
 from agpp.shared.dates.datetime_utils import date_key
 from agpp.shared.exceptions import TransformationError
+from agpp.shared.text import collapse_whitespace
 
 _STEP = Decimal("0.0001")
-
-
-def collapse_whitespace(text: str) -> str:
-    """Replace every run of whitespace with a single space."""
-    return " ".join(text.split())
 
 
 def to_rows(lines: Sequence[OrderLine]) -> TransformedOrders:
