@@ -7,5 +7,13 @@ from agpp.pipelines.customer_orders.transformation.rows import (
 )
 from agpp.pipelines.customer_orders.transformation.stage import transform_orders
 from agpp.pipelines.customer_orders.transformation.transformer import to_rows
+from agpp.shared.text import collapse_whitespace
 
-__all__ = ["CustomerRow", "OrderLineRow", "TransformedOrders", "to_rows", "transform_orders"]
+__all__ = [
+    "CustomerRow",
+    "OrderLineRow",
+    "TransformedOrders",
+    "collapse_whitespace",
+    "to_rows",
+    "transform_orders",
+]

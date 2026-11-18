@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 from agpp.pipelines.supplier_product.models import Supplier, SupplierProduct
-from agpp.pipelines.supplier_product.transformation.transformer import (
+from agpp.pipelines.supplier_product.transformation import (
     collapse_whitespace,
     to_product_row,
     transform_supplier,

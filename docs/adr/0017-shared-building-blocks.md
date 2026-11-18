@@ -52,3 +52,9 @@ too early creates abstractions nobody asked for, so the rule is: **code moves to
 ### Follow-ups
 - The refactor and the import-linter contracts.
 - Rename the reject key column with the Customer Orders migration.
+
+## Amendments
+
+- 2026-11-16: with the Inventory pipeline, surrogate-key resolution (`resolve_keys`) and
+  whitespace collapsing (`collapse_whitespace`) had a third user and moved to `shared/`.
+  The stage loops, outcome types and result tables still differ per pipeline, so they stay.

@@ -4,8 +4,11 @@ from decimal import Decimal
 import pytest
 
 from agpp.pipelines.customer_orders.models import OrderLine
-from agpp.pipelines.customer_orders.transformation import to_rows, transform_orders
-from agpp.pipelines.customer_orders.transformation.transformer import collapse_whitespace
+from agpp.pipelines.customer_orders.transformation import (
+    collapse_whitespace,
+    to_rows,
+    transform_orders,
+)
 from agpp.pipelines.customer_orders.validation import ValidationResult
 from agpp.shared.exceptions import TransformationError
 
