@@ -40,8 +40,7 @@ def known_product_ids(pool: Pool) -> list[str]:
     """The products currently in the warehouse (the Supplier Product pipeline owns them)."""
     with connection(pool) as conn:
         rows = conn.execute(
-            "SELECT product_id FROM warehouse.dim_product WHERE product_key > 0"
-            " ORDER BY product_id"
+            "SELECT product_id FROM warehouse.dim_product WHERE product_key > 0 ORDER BY product_id"
         ).fetchall()
     return [str(row[0]) for row in rows]
 
