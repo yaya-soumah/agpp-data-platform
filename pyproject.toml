@@ -54,6 +54,9 @@ select = ["E", "F", "I", "B", "UP", "SIM", "N", "C4", "RUF", "PT", "S"]
 "tests/**" = ["S101"]
 "src/agpp/pipelines/*/sample_data.py" = ["S311"]
 
+[tool.ruff.lint.pep8-naming]
+ignore-names = ["do_GET"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true

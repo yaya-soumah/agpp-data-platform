@@ -44,7 +44,7 @@ class FeedHttpServer(ThreadingHTTPServer):
 
 
 class _Handler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         server = cast(FeedHttpServer, self.server)
         state = server.state
         state.requests.append(self.path)
