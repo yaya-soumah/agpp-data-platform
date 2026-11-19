@@ -5,6 +5,7 @@ import pytest
 
 import agpp.main as cli
 from agpp.pipelines.customer_orders.service import RunSummary as OrdersRunSummary
+from agpp.pipelines.inventory.service import RunSummary as InventoryRunSummary
 from agpp.pipelines.supplier_product.loading import RunStatus
 from agpp.pipelines.supplier_product.service import RunSummary
 from agpp.shared.configuration.models import PlatformConfig
@@ -71,6 +72,19 @@ def orders_data_dir(
     (pipelines / "customer_orders.yaml").write_text(text, encoding="utf-8")
     monkeypatch.setenv("AGPP_DATA_DIR", str(tmp_path / "data"))
     return tmp_path / "data" / "incoming" / "customer_orders"
+
+
+@pytest.fixture
+def inventory_config(
+    cli_args: list[str], project_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pipelines = Path(cli_args[1]) / "pipelines"
+    pipelines.mkdir(exist_ok=True)
+    text = (project_root / "config" / "pipelines" / "inventory.yaml").read_text(encoding="utf-8")
+    text = text.replace("initial_delay_seconds: 1.0", "initial_delay_seconds: 0")
+    (pipelines / "inventory.yaml").write_text(text, encoding="utf-8")
+    monkeypatch.delenv("INVENTORY_API_TOKEN", raising=False)
+    monkeypatch.delenv("INVENTORY_API_URL", raising=False)
 
 
 class _FakePool:
@@ -306,3 +320,114 @@ def test_generate_sample_orders_rejects_a_bad_unknown_ratio(
 
     assert exit_info.value.code == 2
     assert "between 0 and 1" in capsys.readouterr().err
+
+
+def test_run_inventory_exits_zero_when_the_run_succeeds(
+    cli_args: list[str], inventory_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _FakePool()
+    monkeypatch.setattr(cli, "create_pool", lambda _config: fake)
+    monkeypatch.setattr(
+        cli,
+        "run_inventory",
+        lambda *_args, **_kwargs: InventoryRunSummary("run-1", RunStatus.SUCCEEDED),
+    )
+
+    assert cli.main([*cli_args, "run-inventory"]) == cli.EXIT_OK
+    assert fake.closed
+
+
+def test_run_inventory_exits_nonzero_when_the_run_failed(
+    cli_args: list[str], inventory_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli,
+        "run_inventory",
+        lambda *_args, **_kwargs: InventoryRunSummary("run-1", RunStatus.FAILED),
+    )
+
+    assert cli.main([*cli_args, "run-inventory"]) == cli.EXIT_ERROR
+
+
+def _fake_serve(served: dict[str, object]) -> object:
+    def serve(state: object, *, host: str, port: int, path: str) -> None:
+        served.update(state=state, host=host, port=port, path=path)
+
+    return serve
+
+
+def test_serve_sample_inventory_serves_a_generated_feed(
+    cli_args: list[str], inventory_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    served: dict[str, object] = {}
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli, "known_inventory_product_ids", lambda _pool: [f"SUP-001:S1-{n:05d}" for n in range(10)]
+    )
+    monkeypatch.setattr(cli, "serve_mock_feed", _fake_serve(served))
+
+    exit_code = cli.main(
+        [
+            *cli_args,
+            "serve-sample-inventory",
+            "--port",
+            "9999",
+            "--locations",
+            "2",
+            "--coverage",
+            "1",
+            "--bad-ratio",
+            "0",
+            "--unknown-ratio",
+            "0",
+        ]
+    )
+
+    state = served["state"]
+    assert exit_code == cli.EXIT_OK
+    assert (served["host"], served["port"], served["path"]) == ("127.0.0.1", 9999, "/v1/stock")
+    assert len(state.items) == 20  # type: ignore[attr-defined]
+    assert state.token is None  # type: ignore[attr-defined]
+
+
+def test_serve_sample_inventory_requires_the_configured_token(
+    cli_args: list[str], inventory_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    served: dict[str, object] = {}
+    monkeypatch.setenv("INVENTORY_API_TOKEN", "s3cret")
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(cli, "known_inventory_product_ids", lambda _pool: ["SUP-001:S1-00001"])
+    monkeypatch.setattr(cli, "serve_mock_feed", _fake_serve(served))
+
+    cli.main([*cli_args, "serve-sample-inventory"])
+    token = served["state"].token  # type: ignore[attr-defined]
+    assert token == "s3cret"  # noqa: S105
+
+
+def test_serve_sample_inventory_needs_products_in_the_warehouse(
+    cli_args: list[str],
+    inventory_config: None,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    served: dict[str, object] = {}
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(cli, "known_inventory_product_ids", lambda _pool: [])
+    monkeypatch.setattr(cli, "serve_mock_feed", _fake_serve(served))
+
+    exit_code = cli.main([*cli_args, "serve-sample-inventory"])
+
+    assert exit_code == cli.EXIT_ERROR
+    assert "run run-supplier-product first" in caplog.text
+    assert served == {}
+
+
+@pytest.mark.parametrize("option", [["--port", "70000"], ["--coverage", "0"], ["--locations", "9"]])
+def test_serve_sample_inventory_rejects_invalid_options(
+    cli_args: list[str], option: list[str]
+) -> None:
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main([*cli_args, "serve-sample-inventory", *option])
+
+    assert exit_info.value.code == 2

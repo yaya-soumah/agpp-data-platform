@@ -11,6 +11,12 @@ from agpp import __version__
 from agpp.pipelines.customer_orders.config import CustomerOrdersConfig
 from agpp.pipelines.customer_orders.sample_data import generate_orders_file, known_product_ids
 from agpp.pipelines.customer_orders.service import run_customer_orders
+from agpp.pipelines.inventory.config import InventoryConfig
+from agpp.pipelines.inventory.mock_feed import FeedState
+from agpp.pipelines.inventory.mock_feed import serve as serve_mock_feed
+from agpp.pipelines.inventory.sample_data import generate_feed
+from agpp.pipelines.inventory.sample_data import known_product_ids as known_inventory_product_ids
+from agpp.pipelines.inventory.service import run_inventory
 from agpp.pipelines.supplier_product.config import SupplierProductConfig
 from agpp.pipelines.supplier_product.extraction import extract_all
 from agpp.pipelines.supplier_product.loading import RunStatus
@@ -164,6 +170,80 @@ def _generate_sample_orders(config: PlatformConfig, args: argparse.Namespace) ->
     return EXIT_OK
 
 
+def _port(text: str) -> int:
+    value = int(text)
+    if not 1 <= value <= 65535:
+        raise argparse.ArgumentTypeError("must be between 1 and 65535")
+    return value
+
+
+def _coverage(text: str) -> float:
+    value = float(text)
+    if not 0 < value <= 1:
+        raise argparse.ArgumentTypeError("must be greater than 0 and at most 1")
+    return value
+
+
+def _inventory_config(args: argparse.Namespace) -> InventoryConfig:
+    return load_pipeline_config(
+        args.config_dir, "inventory", InventoryConfig, env_file=args.env_file
+    )
+
+
+def _run_inventory(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _inventory_config(args)
+    pool = create_pool(config.database)
+    try:
+        summary = run_inventory(pool, pipeline_config, run_id=_new_run_id(), now=utc_now())
+    finally:
+        pool.close()
+    return EXIT_OK if summary.status is RunStatus.SUCCEEDED else EXIT_ERROR
+
+
+def _serve_sample_inventory(config: PlatformConfig, args: argparse.Namespace) -> int:
+    pipeline_config = _inventory_config(args)
+    pool = create_pool(config.database)
+    try:
+        product_ids = known_inventory_product_ids(pool)
+    finally:
+        pool.close()
+    if not product_ids:
+        logger.error("No products in the warehouse; run run-supplier-product first")
+        return EXIT_ERROR
+
+    snapshot_at = utc_now().replace(minute=0, second=0, microsecond=0)
+    feed = generate_feed(
+        product_ids,
+        locations=args.locations,
+        coverage=args.coverage,
+        bad_item_ratio=args.bad_ratio,
+        unknown_product_ratio=args.unknown_ratio,
+        seed=args.seed,
+        snapshot_at=snapshot_at,
+    )
+    token = pipeline_config.source.token
+    state = FeedState(
+        snapshot_at=feed.snapshot_at,
+        items=feed.items,
+        token=token.get_secret_value() if token is not None else None,
+    )
+    logger.info(
+        "Serving sample inventory",
+        extra={
+            "host": args.host,
+            "port": args.port,
+            "path": pipeline_config.source.path,
+            "items": len(feed.items),
+            "defective_items": feed.defective_items,
+            "unknown_product_items": feed.unknown_product_items,
+            "snapshot_at": feed.snapshot_at,
+            "authenticated": state.token is not None,
+        },
+    )
+    serve_mock_feed(state, host=args.host, port=args.port, path=pipeline_config.source.path)
+    return EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
@@ -173,6 +253,8 @@ COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "run-supplier-product": _run_supplier_product,
     "run-customer-orders": _run_customer_orders,
     "generate-sample-orders": _generate_sample_orders,
+    "run-inventory": _run_inventory,
+    "serve-sample-inventory": _serve_sample_inventory,
 }
 
 
@@ -236,6 +318,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="share of lines that refer to products the warehouse does not know",
     )
     orders.add_argument("--seed", type=int, default=42, help="seed for a reproducible file")
+    subcommands.add_parser(
+        "run-inventory",
+        help="run the whole Inventory pipeline and load the warehouse",
+    )
+    feed = subcommands.add_parser(
+        "serve-sample-inventory",
+        help="serve a synthetic stock feed built from the products in the warehouse",
+    )
+    feed.add_argument("--host", default="127.0.0.1", help="address to listen on")
+    feed.add_argument("--port", type=_port, default=8080, help="port to listen on")
+    feed.add_argument("--locations", type=int, choices=range(1, 5), default=4)
+    feed.add_argument("--coverage", type=_coverage, default=0.7, help="share of products stocked")
+    feed.add_argument("--bad-ratio", type=_ratio, default=0.02, help="share of bad items")
+    feed.add_argument(
+        "--unknown-ratio", type=_ratio, default=0.03, help="share of unknown products"
+    )
+    feed.add_argument("--seed", type=int, default=42, help="seed for a reproducible feed")
 
     return parser
 
