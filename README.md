@@ -33,11 +33,15 @@ implemented end to end.
 flowchart LR
     SF[Supplier files] --> SP[Supplier Product pipeline]
     OF[Order file] --> CO[Customer Orders pipeline]
+    API[Stock feed over HTTP] --> INV[Inventory pipeline]
     SP --> DS[("warehouse<br/>dim_supplier, dim_product")]
     CO --> DC[("warehouse<br/>dim_customer, fact_order_line")]
+    INV --> DL[("warehouse<br/>dim_location, fact_inventory_snapshot")]
     DS -. product keys .-> CO
+    DS -. product keys .-> INV
     SP --> OP[("operational<br/>runs, results, rejected_records")]
     CO --> OP
+    INV --> OP
 ```
 - **Isolation.** Supplier Product processes each supplier independently; Customer Orders processes one file per run; one
   failing supplier never stops the others.
@@ -48,6 +52,8 @@ flowchart LR
 - **Observable.** Every run is recorded with its per-supplier result, and
   every rejected row is stored with its source line and reasons.
 - **Late reference data.** An order line whose product is not in the catalog yet is loaded against the unknown product and corrected on the next run.
+- **Three source kinds.** Supplier CSV files, an order CSV file and a paginated JSON
+  feed over HTTP share the same extraction contract, validation shape and loader rules.
 
 ```mermaid
 erDiagram
@@ -55,8 +61,9 @@ erDiagram
     dim_customer ||--o{ fact_order_line : customer_key
     dim_product ||--o{ fact_order_line : product_key
     dim_date ||--o{ fact_order_line : date_key
-    pipeline_runs ||--o{ supplier_run_results : run_id
-    pipeline_runs ||--o| order_run_results : run_id
+    dim_location ||--o{ fact_inventory_snapshot : location_key
+    dim_product ||--o{ fact_inventory_snapshot : product_key
+    dim_date ||--o{ fact_inventory_snapshot : date_key
 ```
 
 The reasoning behind each choice is in the
@@ -224,6 +231,23 @@ the run, which is recorded with its stage in `operational.order_run_results`.
 Running it again on the same file changes nothing, and an older update never
 overwrites a newer one. See [ADR-0016](docs/adr/0016-customer-orders-pipeline-contract.md).
 
+## Running the Inventory pipeline
+
+The feed is a paginated JSON API (`config/pipelines/inventory.yaml`; address and token come
+from `INVENTORY_API_URL` and `INVENTORY_API_TOKEN`). For development a local feed built
+from the products in your warehouse can be served:
+
+```bash
+uv run agpp serve-sample-inventory      # terminal 1, leave running
+uv run agpp run-inventory               # terminal 2
+```
+
+Each run loads a periodic snapshot: running again on the same feed changes nothing, a later
+snapshot on the same day replaces that day's rows, an older late one never overwrites a newer
+one, and a new day adds rows, which is the history. A stale, future or unreadable snapshot, a
+broken feed or a failed quality gate fails the run with its stage recorded in
+`operational.inventory_run_results`. See [ADR-0018](docs/adr/0018-inventory-pipeline-contract.md).
+
 ## Running in Docker
 
 ```bash
@@ -231,6 +255,8 @@ docker compose up -d                                   # PostgreSQL
 docker compose run --rm app migrate
 docker compose run --rm app generate-sample-data --rows 100
 docker compose run --rm app run-supplier-product
+docker compose up -d feed        # serves a synthetic stock feed built from the products
+docker compose run --rm app run-inventory
 ```
 
 The image runs as a non-root user with the production configuration (JSON
@@ -276,7 +302,7 @@ uv run pre-commit install
 
 | Path | Purpose |
 |---|---|
-| `src/agpp/pipelines/` | One package per pipeline, each owning its business logic |
+| `src/agpp/pipelines/` | One package per pipeline (`supplier_product`, `customer_orders`, `inventory`), each with `extraction`, `validation`, `transformation`, `loading` and a `service`" |
 | `src/agpp/shared/` | Generic infrastructure: configuration, logging, exceptions, database, retry, dates |
 | `config/` | Environment YAML and `pipelines/<name>.yaml` (no secrets) |
 | `sql/migrations` | Versioned SQL migrations |

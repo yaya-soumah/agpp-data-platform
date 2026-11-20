@@ -31,7 +31,26 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      INVENTORY_API_URL: ${INVENTORY_API_URL:-http://feed:8080}
+      INVENTORY_API_TOKEN: ${INVENTORY_API_TOKEN:-}
     volumes:
       - ./data:/app/data
+  feed:
+    build: .
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["serve-sample-inventory", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      AGPP_ENV: production
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      INVENTORY_API_TOKEN: ${INVENTORY_API_TOKEN:-}
+    ports:
+      - "127.0.0.1:8080:8080"
 volumes:
   postgres_data:
