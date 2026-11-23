@@ -21,5 +21,6 @@
 | [0016](0016-customer-orders-pipeline-contract.md) | Customer Orders pipeline contract |
 | [0017](0017-shared-building-blocks.md) | Shared building blocks |
 | [0018](0018-inventory-pipeline-contract.md) | Inventory pipeline contract |
+| [0019](0019-orchestration-with-airflow.md) | Orchestration with Airflow |
 
 New decisions copy [the template](0000-template.md) and take the next number.
