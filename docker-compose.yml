@@ -19,6 +19,7 @@ services:
         timeout: 3s
         retries: 10
   app:
+    image: agpp-app:local
     build: .
     profiles: ["app"]
     depends_on:
@@ -36,6 +37,7 @@ services:
     volumes:
       - ./data:/app/data
   feed:
+    image: agpp-app:local
     build: .
     profiles: ["app"]
     depends_on:
