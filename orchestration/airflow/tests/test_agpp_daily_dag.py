@@ -53,3 +53,31 @@ def test_run_settings(dagbag: DagBag) -> None:
     assert dag.catchup is False
     assert dag.max_active_runs == 1
     assert all(task.retries == 1 for task in dag.tasks)
+
+def test_tasks_pass_only_the_subcommand(dagbag: DagBag) -> None:
+    dag = dagbag.get_dag("agpp_daily")
+    assert dag is not None
+    commands = {task.task_id: task.command for task in dag.tasks}
+    assert commands == {
+        "migrate": ["migrate"],
+        "run_supplier_product": ["run-supplier-product"],
+        "run_customer_orders": ["run-customer-orders"],
+        "run_inventory": ["run-inventory"],
+    }
+
+
+def test_tasks_join_the_agpp_network_and_mount_data(dagbag: DagBag) -> None:
+    dag = dagbag.get_dag("agpp_daily")
+    assert dag is not None
+    for task in dag.tasks:
+        assert task.network_mode == "agpp_default"
+        assert [m["Target"] for m in task.mounts] == ["/app/data"]
+
+
+def test_task_environment_targets_compose_services(dagbag: DagBag) -> None:
+    dag = dagbag.get_dag("agpp_daily")
+    assert dag is not None
+    for task in dag.tasks:
+        assert task.environment["POSTGRES_HOST"] == "postgres"
+        assert task.environment["INVENTORY_API_URL"] == "http://feed:8080"
+        assert task.environment["AGPP_ENV"] == "production"

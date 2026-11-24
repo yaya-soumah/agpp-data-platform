@@ -1,0 +1,73 @@
+name: agpp-airflow
+
+x-airflow-common: &airflow-common
+  image: agpp-airflow:local
+  build: .
+  user: "50000:0"
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-db/airflow
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:-local-dev-only-change-me-0123456789abcdef}
+  volumes:
+    - ./dags:/opt/airflow/dags
+  depends_on:
+    airflow-db:
+      condition: service_healthy
+    airflow-init:
+      condition: service_completed_successfully
+
+services:
+  airflow-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  airflow-init:
+    <<: *airflow-common
+    command: ["airflow", "db", "migrate"]
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+
+  airflow-apiserver:
+    <<: *airflow-common
+    command: ["airflow", "api-server"]
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    command: ["airflow", "dag-processor"]
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: ["airflow", "scheduler"]
+    environment:
+      <<: *airflow-env
+      AGPP_IMAGE: agpp-app:local
+      AGPP_DOCKER_NETWORK: agpp_default
+      AGPP_DATA_DIR: ${AGPP_DATA_DIR:?set AGPP_DATA_DIR in .env}
+      AGPP_FEED_URL: http://feed:8080
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      INVENTORY_API_TOKEN: ${INVENTORY_API_TOKEN:-}
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  airflow_db_data:
