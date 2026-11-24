@@ -76,21 +76,19 @@ jobs:
         run: >-
           docker run --rm --entrypoint sh agpp-data-platform:ci
           -c 'test ! -e /app/.env && test ! -e /app/tests'
-  orchestration:
-    name: orchestration
-    runs-on: ubuntu-latest
-    env:
-      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Airflow with constraints
-        run: |
-          uv venv --python 3.12 .venv-airflow
-          uv pip install --python .venv-airflow/bin/python \
-            -r orchestration/airflow/requirements-test.txt pytest \
-            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.4.0/constraints-3.12.txt"
-      - name: DAG structure tests
-        run: .venv-airflow/bin/python -m pytest -c orchestration/airflow/pytest.ini orchestration/airflow/tests
+    orchestration:
+      name: orchestration
+      runs-on: ubuntu-latest
+      env:
+        AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      steps:
+        - uses: actions/checkout@v4
+        - uses: astral-sh/setup-uv@v5
+        - name: Install Airflow with constraints
+          run: |
+            uv venv --python 3.12 .venv-airflow
+            uv pip install --python .venv-airflow/bin/python \
+              -r orchestration/airflow/requirements-test.txt pytest \
+              --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.4.0/constraints-3.12.txt"
+        - name: DAG structure tests
+          run: .venv-airflow/bin/python -m pytest -c orchestration/airflow/pytest.ini orchestration/airflow/tests
