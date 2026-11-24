@@ -87,8 +87,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Airflow with constraints
-        run: >
-          pip install -r orchestration/airflow/requirements-test.txt
-          --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.4.0/constraints-3.12.txt"
+        run: |
+          uv venv --python 3.12 .venv-airflow
+          uv pip install --python .venv-airflow/bin/python \
+            -r orchestration/airflow/requirements-test.txt pytest \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.4.0/constraints-3.12.txt"
       - name: DAG structure tests
-        run: .venv-airflow/bin/pytest -c orchestration/airflow/pytest.ini orchestration/airflow/tests
+        run: .venv-airflow/bin/python -m pytest -c orchestration/airflow/pytest.ini orchestration/airflow/tests
