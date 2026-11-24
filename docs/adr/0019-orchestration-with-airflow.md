@@ -39,3 +39,15 @@ correctness requirement. Orchestration must stay separate from pipeline logic.
   dependency graph.
 - Airflow as a project dependency: rejected, dependency conflicts.
 - PythonOperator importing `agpp`: rejected, couples orchestration to code.
+
+## Runtime (amendment)
+- Airflow runs with LocalExecutor in `orchestration/airflow/docker-compose.yml`
+  (project `agpp-airflow`): api-server, scheduler, dag-processor and its own
+  metadata Postgres, separate from the AGPP warehouse.
+- Only the scheduler mounts the Docker socket; it starts one AGPP container per
+  task on the `agpp_default` network. Local use only (UI bound to 127.0.0.1,
+  all-admins auth); a real deployment needs a proper auth manager and a socket
+  proxy or Kubernetes/Celery executor.
+- Task containers receive database settings from the scheduler's environment.
+  Sensitive keys are masked in the UI; a secrets backend is a follow-up.
+- The data directory is bind-mounted into tasks like the `app` service does.

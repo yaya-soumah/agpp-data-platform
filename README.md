@@ -26,8 +26,8 @@ choice is recorded in [`docs/adr/`](docs/adr/README.md).
 
 ## Architecture
 
-Every pipeline follows the same lifecycle. The Supplier Product pipeline is
-implemented end to end.
+Every pipeline follows the same lifecycle. All three pipelines are implemented
+end to end and are scheduled daily by Airflow (see [Orchestration](#orchestration)).
 
 ```mermaid
 flowchart LR
@@ -71,7 +71,7 @@ The reasoning behind each choice is in the
 
 ## Requirements
 
-- Python 3.13.1 or newer
+- Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
 
 ## Getting started
@@ -263,6 +263,23 @@ The image runs as a non-root user with the production configuration (JSON
 logs); credentials come from the environment, never from the image. See
 [ADR-0015](docs/adr/0015-containerization.md).
 
+## Orchestration
+
+Airflow runs the three pipelines daily as one workflow, `agpp_daily`:
+
+```mermaid
+flowchart LR
+    M[migrate] --> SP[run-supplier-product]
+    SP --> CO[run-customer-orders]
+    SP --> INV[run-inventory]
+```
+
+Each task runs one `agpp` command in the AGPP container image, so Airflow never
+imports pipeline code and is not a project dependency. Orders and inventory run
+in parallel after supplier products, and a failed supplier run stops them. See
+[`orchestration/airflow/`](orchestration/airflow/README.md) and
+[ADR-0019](docs/adr/0019-orchestration-with-airflow.md).
+
 ## Quality gates
 
 Every change must pass all four checks (enforced in CI):
@@ -272,12 +289,12 @@ uv run pytest
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
-uv run lint-imports
+uv run lint-imports   # enforces the architecture boundaries
 ```
-lint-imports` enforces the architecture boundaries
-CI runs two jobs on every pull request: `quality` (the four gates above) and
+CI runs four jobs on every pull request: `quality` (the five checks above) and
 `integration` (`pytest -m integration` against a PostgreSQL service
-container), so the idempotency and rollback tests are verified on every change.
+container, so the idempotency and rollback tests are verified on every change), `image` (Docker
+build checks) and `orchestration` (Airflow DAG structure tests).
 
 ## Testing
 
@@ -302,11 +319,12 @@ uv run pre-commit install
 
 | Path | Purpose |
 |---|---|
-| `src/agpp/pipelines/` | One package per pipeline (`supplier_product`, `customer_orders`, `inventory`), each with `extraction`, `validation`, `transformation`, `loading` and a `service`" |
+| `src/agpp/pipelines/` | One package per pipeline (`supplier_product`, `customer_orders`, `inventory`), each with `extraction`, `validation`, `transformation`, `loading` and a `service` |
 | `src/agpp/shared/` | Generic infrastructure: configuration, logging, exceptions, database, retry, dates |
 | `config/` | Environment YAML and `pipelines/<name>.yaml` (no secrets) |
 | `sql/migrations` | Versioned SQL migrations |
 | `Dockerfile`, `docker-compose.yml` | Container image and local services |
+| `orchestration/airflow/` | Airflow DAG, image and compose file (isolated from the project) |
 | `tests/` | Unit and integration tests |
 | `docs/` | Architecture decision records and documentation |
 | `data/` | Local sample and generated data (not committed) |
@@ -314,3 +332,4 @@ uv run pre-commit install
 ## Documentation
 
 - [Architecture decision records](docs/adr/)
+- [Orchestration with Airflow](orchestration/airflow/README.md)

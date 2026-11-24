@@ -2,8 +2,9 @@
 
 migrate -> supplier_product -> [customer_orders, inventory]
 
-Each task runs one AGPP CLI command in the AGPP container image. This module
-never imports `agpp`: the CLI is the contract between orchestration and code.
+Each task runs one AGPP CLI command in the AGPP container image. The image's
+ENTRYPOINT is `agpp`, so a task passes only the subcommand. This module never
+imports `agpp`: the CLI is the contract between orchestration and code.
 """
 
 from __future__ import annotations
@@ -14,10 +15,31 @@ from datetime import timedelta
 import pendulum
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.sdk import DAG
+from docker.types import Mount
 
-AGPP_IMAGE = os.environ.get("AGPP_IMAGE", "agpp-data-platform-app:latest")
-DOCKER_NETWORK = os.environ.get("AGPP_DOCKER_NETWORK", "agpp-data-platform_default")
-CLI_PREFIX = ["agpp"]  # confirmed against the Dockerfile ENTRYPOINT in PR 2
+AGPP_IMAGE = os.environ.get("AGPP_IMAGE", "agpp-app:local")
+DOCKER_NETWORK = os.environ.get("AGPP_DOCKER_NETWORK", "agpp_default")
+DATA_DIR = os.environ.get("AGPP_DATA_DIR", "/tmp/agpp-data")
+FEED_URL = os.environ.get("AGPP_FEED_URL", "http://feed:8080")
+
+_PASSTHROUGH = (
+    "POSTGRES_DB",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "INVENTORY_API_TOKEN",
+)
+
+
+def _task_environment() -> dict[str, str]:
+    """Environment for task containers: fixed network facts + passthrough."""
+    env = {
+        "AGPP_ENV": "production",
+        "POSTGRES_HOST": "postgres",
+        "POSTGRES_PORT": "5432",
+        "INVENTORY_API_URL": FEED_URL,
+    }
+    env.update({key: os.environ[key] for key in _PASSTHROUGH if key in os.environ})
+    return env
 
 
 def _agpp_task(command: str) -> DockerOperator:
@@ -25,7 +47,9 @@ def _agpp_task(command: str) -> DockerOperator:
     return DockerOperator(
         task_id=command.replace("-", "_"),
         image=AGPP_IMAGE,
-        command=[*CLI_PREFIX, command],
+        command=[command],
+        environment=_task_environment(),
+        mounts=[Mount(source=DATA_DIR, target="/app/data", type="bind")],
         network_mode=DOCKER_NETWORK,
         docker_url="unix://var/run/docker.sock",
         auto_remove="success",
