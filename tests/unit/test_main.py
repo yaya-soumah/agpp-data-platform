@@ -10,6 +10,7 @@ from agpp.pipelines.supplier_product.loading import RunStatus
 from agpp.pipelines.supplier_product.service import RunSummary
 from agpp.shared.configuration.models import PlatformConfig
 from agpp.shared.exceptions import AgppError
+from agpp.shared.quality import CheckResult, CheckStatus, QualityCheck, QualitySummary
 
 BASE_CONFIG = """\
 app:
@@ -87,12 +88,29 @@ def inventory_config(
     monkeypatch.delenv("INVENTORY_API_URL", raising=False)
 
 
+@pytest.fixture
+def quality_config(
+    cli_args: list[str], project_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pipelines = Path(cli_args[1]) / "pipelines"
+    pipelines.mkdir(exist_ok=True)
+    text = (project_root / "config" / "pipelines" / "data_quality.yaml").read_text(encoding="utf-8")
+    (pipelines / "data_quality.yaml").write_text(text, encoding="utf-8")
+
+
 class _FakePool:
     def __init__(self) -> None:
         self.closed = False
 
     def close(self) -> None:
         self.closed = True
+
+
+def _summary(*statuses: CheckStatus) -> QualitySummary:
+    check = QualityCheck.model_validate(
+        {"name": "a_check", "description": "d", "sql": "SELECT 1", "warn": 0.1, "fail": 0.2}
+    )
+    return QualitySummary("run-1", tuple(CheckResult(check, s, 0.0) for s in statuses))
 
 
 def test_check_config_succeeds_and_logs(
@@ -431,3 +449,29 @@ def test_serve_sample_inventory_rejects_invalid_options(
         cli.main([*cli_args, "serve-sample-inventory", *option])
 
     assert exit_info.value.code == 2
+
+
+def test_check_data_quality_exits_zero_without_failures(
+    cli_args: list[str], quality_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake = _FakePool()
+    monkeypatch.setattr(cli, "create_pool", lambda _config: fake)
+    monkeypatch.setattr(
+        cli,
+        "run_quality_checks",
+        lambda *_args, **_kwargs: _summary(CheckStatus.PASS, CheckStatus.WARN),
+    )
+
+    assert cli.main([*cli_args, "check-data-quality"]) == cli.EXIT_OK
+    assert fake.closed
+
+
+def test_check_data_quality_exits_nonzero_when_a_check_fails(
+    cli_args: list[str], quality_config: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(cli, "create_pool", lambda _config: _FakePool())
+    monkeypatch.setattr(
+        cli, "run_quality_checks", lambda *_args, **_kwargs: _summary(CheckStatus.FAIL)
+    )
+
+    assert cli.main([*cli_args, "check-data-quality"]) == cli.EXIT_ERROR

@@ -1,0 +1,32 @@
+# Data-quality checks (ADR-0020). Each check is one read-only SQL query that returns a
+# single number. `comparison: max` means the value must not exceed the thresholds,
+# `min` that it must not fall below them. Past `warn` the check warns, past `fail` it fails.
+checks:
+  - name: order_lines_unknown_product_share
+    description: Share of order lines loaded against the unknown product
+    comparison: max
+    warn: 0.02
+    fail: 0.10
+    sql: >-
+      SELECT count(*) FILTER (WHERE product_key = -1)::double precision
+             / NULLIF(count(*), 0)
+      FROM warehouse.fact_order_line
+
+  - name: inventory_unknown_product_share
+    description: Share of inventory rows loaded against the unknown product
+    comparison: max
+    warn: 0.05
+    fail: 0.15
+    sql: >-
+      SELECT count(*) FILTER (WHERE product_key = -1)::double precision
+             / NULLIF(count(*), 0)
+      FROM warehouse.fact_inventory_snapshot
+
+  - name: inventory_snapshot_age_hours
+    description: Hours since the latest inventory snapshot
+    comparison: max
+    warn: 26.0
+    fail: 48.0
+    sql: >-
+      SELECT extract(epoch FROM now() - max(snapshot_at)) / 3600
+      FROM warehouse.fact_inventory_snapshot
