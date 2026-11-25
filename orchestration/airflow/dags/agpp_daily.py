@@ -42,7 +42,7 @@ def _task_environment() -> dict[str, str]:
     return env
 
 
-def _agpp_task(command: str) -> DockerOperator:
+def _agpp_task(command: str, trigger_rule: str = "all_success") -> DockerOperator:
     """Build a task that runs `agpp <command>` in the AGPP image."""
     return DockerOperator(
         task_id=command.replace("-", "_"),
@@ -54,6 +54,7 @@ def _agpp_task(command: str) -> DockerOperator:
         docker_url="unix://var/run/docker.sock",
         auto_remove="success",
         mount_tmp_dir=False,
+        trigger_rule=trigger_rule,
     )
 
 
@@ -72,5 +73,8 @@ with DAG(
     supplier_product = _agpp_task("run-supplier-product")
     customer_orders = _agpp_task("run-customer-orders")
     inventory = _agpp_task("run-inventory")
+    # Runs even when a pipeline failed, so the failure shows up in the quality report.
+    check_data_quality = _agpp_task("check-data-quality", trigger_rule="all_done")
 
     migrate >> supplier_product >> [customer_orders, inventory]
+    [customer_orders, inventory] >> check_data_quality

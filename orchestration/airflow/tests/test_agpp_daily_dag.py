@@ -25,6 +25,7 @@ def test_expected_tasks(dagbag: DagBag) -> None:
         "run_supplier_product",
         "run_customer_orders",
         "run_inventory",
+        "check_data_quality",
     }
 
 
@@ -36,9 +37,9 @@ def test_dependencies(dagbag: DagBag) -> None:
         "run_customer_orders",
         "run_inventory",
     }
-    assert dag.get_task("run_customer_orders").downstream_task_ids == set()
-    assert dag.get_task("run_inventory").downstream_task_ids == set()
-
+    assert dag.get_task("run_customer_orders").downstream_task_ids == {"check_data_quality"}
+    assert dag.get_task("run_inventory").downstream_task_ids == {"check_data_quality"}
+    assert dag.get_task("check_data_quality").downstream_task_ids == set()
 
 def test_orders_and_inventory_are_independent(dagbag: DagBag) -> None:
     dag = dagbag.get_dag("agpp_daily")
@@ -63,6 +64,7 @@ def test_tasks_pass_only_the_subcommand(dagbag: DagBag) -> None:
         "run_supplier_product": ["run-supplier-product"],
         "run_customer_orders": ["run-customer-orders"],
         "run_inventory": ["run-inventory"],
+        "check_data_quality": ["check-data-quality"],
     }
 
 
@@ -81,3 +83,11 @@ def test_task_environment_targets_compose_services(dagbag: DagBag) -> None:
         assert task.environment["POSTGRES_HOST"] == "postgres"
         assert task.environment["INVENTORY_API_URL"] == "http://feed:8080"
         assert task.environment["AGPP_ENV"] == "production"
+
+def test_the_quality_check_waits_for_both_pipelines_and_always_runs(dagbag: DagBag) -> None:
+    dag = dagbag.get_dag("agpp_daily")
+    assert dag is not None
+    task = dag.get_task("check_data_quality")
+    assert task.upstream_task_ids == {"run_customer_orders", "run_inventory"}
+    assert task.trigger_rule == "all_done"
+    assert dag.get_task("run_inventory").trigger_rule == "all_success"

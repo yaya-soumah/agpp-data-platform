@@ -30,3 +30,71 @@ checks:
     sql: >-
       SELECT extract(epoch FROM now() - max(snapshot_at)) / 3600
       FROM warehouse.fact_inventory_snapshot
+
+  - name: product_catalog_age_hours
+    description: Hours since the most recent product update from any supplier
+    comparison: max
+    warn: 48.0
+    fail: 168.0
+    sql: >-
+      SELECT extract(epoch FROM now() - max(source_updated_at)) / 3600
+      FROM warehouse.dim_product
+      WHERE product_key > 0
+
+  - name: products_without_stock_share
+    description: Share of products with no inventory row at any location
+    comparison: max
+    warn: 0.10
+    fail: 0.30
+    sql: >-
+      SELECT count(*) FILTER (WHERE NOT EXISTS (
+                 SELECT 1 FROM warehouse.fact_inventory_snapshot AS s
+                 WHERE s.product_key = p.product_key))::double precision
+             / NULLIF(count(*), 0)
+      FROM warehouse.dim_product AS p
+      WHERE p.product_key > 0
+
+  - name: products_never_ordered_share
+    description: Share of products that appear in no order line
+    comparison: max
+    warn: 0.60
+    fail: 0.90
+    sql: >-
+      SELECT count(*) FILTER (WHERE NOT EXISTS (
+                 SELECT 1 FROM warehouse.fact_order_line AS o
+                 WHERE o.product_key = p.product_key))::double precision
+             / NULLIF(count(*), 0)
+      FROM warehouse.dim_product AS p
+      WHERE p.product_key > 0
+
+  - name: products_with_invalid_price
+    description: Products whose unit price is zero or negative (should be impossible)
+    comparison: max
+    warn: 0.0
+    fail: 0.0
+    sql: >-
+      SELECT count(*)
+      FROM warehouse.dim_product
+      WHERE product_key > 0 AND unit_price <= 0
+
+  - name: order_last_run_failed
+    description: 1 when the most recent Customer Orders run did not load, otherwise 0
+    comparison: max
+    warn: 0.0
+    fail: 0.0
+    sql: >-
+      SELECT CASE WHEN status = 'loaded' THEN 0 ELSE 1 END
+      FROM operational.order_run_results
+      ORDER BY recorded_at DESC
+      LIMIT 1
+
+  - name: inventory_last_run_failed
+    description: 1 when the most recent Inventory run did not load, otherwise 0
+    comparison: max
+    warn: 0.0
+    fail: 0.0
+    sql: >-
+      SELECT CASE WHEN status = 'loaded' THEN 0 ELSE 1 END
+      FROM operational.inventory_run_results
+      ORDER BY recorded_at DESC
+      LIMIT 1

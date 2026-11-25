@@ -272,6 +272,8 @@ flowchart LR
     M[migrate] --> SP[run-supplier-product]
     SP --> CO[run-customer-orders]
     SP --> INV[run-inventory]
+    CO --> DQ[check-data-quality]
+    INV --> DQ
 ```
 
 Each task runs one `agpp` command in the AGPP container image, so Airflow never
@@ -279,6 +281,31 @@ imports pipeline code and is not a project dependency. Orders and inventory run
 in parallel after supplier products, and a failed supplier run stops them. See
 [`orchestration/airflow/`](orchestration/airflow/README.md) and
 [ADR-0019](docs/adr/0019-orchestration-with-airflow.md).
+A last task measures the state of the warehouse; it runs even when a pipeline failed.
+
+## Data quality
+
+Pipelines protect themselves from bad input (rejected rows, quality gates). The platform
+also measures the state of the warehouse after loading:
+
+```bash
+uv run agpp check-data-quality
+```
+
+Checks are SQL queries in `config/pipelines/data_quality.yaml`, each with `warn` and `fail`
+thresholds, so adding a check is a configuration change. Every check runs in a read-only
+transaction; a broken check is reported and the others continue. Results are stored per run in
+`operational.quality_check_results` (history) and `operational.quality_latest` (current
+state). The command exits 1 when a check fails or cannot run. See
+[ADR-0020](docs/adr/0020-data-quality-metrics.md).
+
+| Check | Measures |
+|---|---|
+| `order_lines_unknown_product_share`, `inventory_unknown_product_share` | Rows loaded against the unknown product |
+| `inventory_snapshot_age_hours`, `product_catalog_age_hours` | Freshness |
+| `products_without_stock_share`, `products_never_ordered_share` | Coverage between dimensions and facts |
+| `products_with_invalid_price` | An invariant that should be impossible |
+| `order_last_run_failed`, `inventory_last_run_failed` | Health of the latest runs |
 
 ## Quality gates
 

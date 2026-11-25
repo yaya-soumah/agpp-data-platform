@@ -51,3 +51,9 @@ correctness requirement. Orchestration must stay separate from pipeline logic.
 - Task containers receive database settings from the scheduler's environment.
   Sensitive keys are masked in the UI; a secrets backend is a follow-up.
 - The data directory is bind-mounted into tasks like the `app` service does.
+
+## Data-quality task (amendment, ADR-0020)
+The DAG ends with `check_data_quality` (`agpp check-data-quality`), downstream of
+both customer orders and inventory. Its trigger rule is `all_done`: it also runs
+when a pipeline failed, so the failure appears in the quality report. A failed
+check fails the task, and with it the DAG run.
