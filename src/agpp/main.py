@@ -30,6 +30,7 @@ from agpp.shared.database.migrations import apply_migrations
 from agpp.shared.dates.datetime_utils import utc_now
 from agpp.shared.exceptions import AgppError, ConfigurationError
 from agpp.shared.logging import configure_logging
+from agpp.shared.quality import QualityConfig, run_quality_checks
 
 logger = logging.getLogger(__name__)
 
@@ -190,6 +191,12 @@ def _inventory_config(args: argparse.Namespace) -> InventoryConfig:
     )
 
 
+def _quality_config(args: argparse.Namespace) -> QualityConfig:
+    return load_pipeline_config(
+        args.config_dir, "data_quality", QualityConfig, env_file=args.env_file
+    )
+
+
 def _run_inventory(config: PlatformConfig, args: argparse.Namespace) -> int:
     pipeline_config = _inventory_config(args)
     pool = create_pool(config.database)
@@ -244,6 +251,16 @@ def _serve_sample_inventory(config: PlatformConfig, args: argparse.Namespace) ->
     return EXIT_OK
 
 
+def _check_data_quality(config: PlatformConfig, args: argparse.Namespace) -> int:
+    quality_config = _quality_config(args)
+    pool = create_pool(config.database)
+    try:
+        summary = run_quality_checks(pool, quality_config, run_id=_new_run_id())
+    finally:
+        pool.close()
+    return EXIT_ERROR if summary.failed else EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "check-config": _check_config,
     "migrate": _migrate,
@@ -255,6 +272,7 @@ COMMANDS: dict[str, Callable[[PlatformConfig, argparse.Namespace], int]] = {
     "generate-sample-orders": _generate_sample_orders,
     "run-inventory": _run_inventory,
     "serve-sample-inventory": _serve_sample_inventory,
+    "check-data-quality": _check_data_quality,
 }
 
 
@@ -335,6 +353,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--unknown-ratio", type=_ratio, default=0.03, help="share of unknown products"
     )
     feed.add_argument("--seed", type=int, default=42, help="seed for a reproducible feed")
+
+    subcommands.add_parser(
+        "check-data-quality",
+        help="measure the state of the warehouse with the configured data-quality checks",
+    )
 
     return parser
 
