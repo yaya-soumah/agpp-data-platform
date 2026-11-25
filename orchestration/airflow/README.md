@@ -1,7 +1,7 @@
 # Airflow orchestration
 
 `agpp_daily` (Airflow 3.4, see [ADR-0019](../../docs/adr/0019-orchestration-with-airflow.md))
-runs: migrate -> supplier products -> [customer orders, inventory] at 02:00 UTC.
+runs: migrate -> supplier products -> [customer orders, inventory] -> data-quality checks at 02:00 UTC.
 Each task runs one `agpp` command in the `agpp-app:local` image.
 
 ## Run it locally
@@ -26,6 +26,8 @@ Stop: `docker compose -f orchestration/airflow/docker-compose.yml down`.
 - Idempotent loads make retries and manual re-triggers safe (ADR-0014).
 - If supplier_product fails, orders and inventory are not run.
 - The Docker socket is mounted into the scheduler only; this setup is for local use.
+- The final task, `check_data_quality`, runs even when a pipeline failed (ADR-0020) and
+  fails when a check fails. Results are in `operational.quality_check_results`.
 
 ## Tests
 
