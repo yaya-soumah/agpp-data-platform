@@ -272,6 +272,8 @@ flowchart LR
     M[migrate] --> SP[run-supplier-product]
     SP --> CO[run-customer-orders]
     SP --> INV[run-inventory]
+    CO --> DQ[check-data-quality]
+    INV --> DQ
 ```
 
 Each task runs one `agpp` command in the AGPP container image, so Airflow never
@@ -279,6 +281,7 @@ imports pipeline code and is not a project dependency. Orders and inventory run
 in parallel after supplier products, and a failed supplier run stops them. See
 [`orchestration/airflow/`](orchestration/airflow/README.md) and
 [ADR-0019](docs/adr/0019-orchestration-with-airflow.md).
+A last task measures the state of the warehouse; it runs even when a pipeline failed.
 
 ## Quality gates
 
