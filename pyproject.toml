@@ -1,6 +1,6 @@
 [project]
 name = "agpp-data-platform"
-version = "0.1.0"
+version = "1.0.0"
 description = "A production-style data platform: three pipelines, one PostgreSQL warehouse, Airflow orchestration and data-quality checks."
 readme = "README.md"
 requires-python = ">=3.12"
