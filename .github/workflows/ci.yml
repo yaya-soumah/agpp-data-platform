@@ -96,3 +96,5 @@ jobs:
           run: docker compose --env-file .env_example -f orchestration/airflow/docker-compose.yml config -q
         - name: Build Airflow image
           run: docker build orchestration/airflow
+        - name: Validate the Compose file
+          run: docker compose --env-file .env_example --profile app config -q
