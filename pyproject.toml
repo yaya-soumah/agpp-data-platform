@@ -1,7 +1,7 @@
 [project]
 name = "agpp-data-platform"
 version = "0.1.0"
-description = "AGPP internal data platform: supplier, orders and inventory pipelines."
+description = "A production-style data platform: three pipelines, one PostgreSQL warehouse, Airflow orchestration and data-quality checks."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -12,6 +12,11 @@ dependencies = [
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yaya-soumah/agpp-data-platform"
+Issues = "https://github.com/yaya-soumah/agpp-data-platform/issues"
+Changelog = "https://github.com/yaya-soumah/agpp-data-platform/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
