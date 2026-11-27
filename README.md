@@ -1,59 +1,69 @@
 # AGPP Data Platform
 
 [![CI](https://github.com/yaya-soumah/agpp-data-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/yaya-soumah/agpp-data-platform/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-A production-style data platform for the fictitious company AGPP, built as
-an engineering portfolio. Three pipelines (Supplier Product, Customer
-Orders, Inventory) share one platform, one warehouse and one set of
-engineering standards.
+A production-style data platform for a fictitious company, built as an engineering
+portfolio. Three pipelines (supplier products, customer orders, stock levels) load one
+PostgreSQL warehouse, Airflow runs them every day, and a configurable data-quality layer
+measures the result. It is tested, containerized and documented the way a team would ship
+it: every significant choice is recorded in an
+[architecture decision record](docs/adr/README.md).
 
-```
-Supplier Product ──┐
-Customer Orders ───┼──> Data Warehouse
-Inventory ─────────┘
-```
+## What it does
 
-> **Status:** under active development. See the pull request history for
-> progress.
+- **Supplier Product** loads product catalogs from several supplier CSV files into
+  `dim_supplier` and `dim_product`. Each supplier is validated and loaded in its own
+  transaction, so one bad file never stops the others.
+- **Customer Orders** loads an order file into `dim_customer` and `fact_order_line`. An order
+  line whose product is not in the catalog yet is loaded against an unknown member and
+  corrected on the next run.
+- **Inventory** loads a paginated JSON stock feed over HTTP as a periodic snapshot into
+  `dim_location` and `fact_inventory_snapshot`, keeping one snapshot per day as history.
+- **Orchestration**: an Airflow DAG runs migrations, the three pipelines in dependency
+  order and the quality checks every day.
+- **Data quality**: nine checks written as SQL in a configuration file measure freshness,
+  unknown-member share, coverage and the health of the latest runs.
 
-## Principles
-
-Each pipeline follows the same lifecycle: **extract → validate →
-transform → load**. Business logic never orchestrates itself, nothing
-environment-specific lives in code, and re-running a pipeline with the
-same input never creates inconsistent data. The reasoning behind each
-choice is recorded in [`docs/adr/`](docs/adr/README.md).
+Every pipeline follows the same lifecycle: **extract, validate, transform, load**.
+Rejected rows are stored with their source line and reasons, and running a pipeline twice on
+the same input writes nothing.
 
 ## Architecture
 
-Every pipeline follows the same lifecycle. All three pipelines are implemented
-end to end and are scheduled daily by Airflow (see [Orchestration](#orchestration)).
-
 ```mermaid
 flowchart LR
-    SF[Supplier files] --> SP[Supplier Product pipeline]
-    OF[Order file] --> CO[Customer Orders pipeline]
-    API[Stock feed over HTTP] --> INV[Inventory pipeline]
-    SP --> DS[("warehouse<br/>dim_supplier, dim_product")]
-    CO --> DC[("warehouse<br/>dim_customer, fact_order_line")]
-    INV --> DL[("warehouse<br/>dim_location, fact_inventory_snapshot")]
-    DS -. product keys .-> CO
-    DS -. product keys .-> INV
-    SP --> OP[("operational<br/>runs, results, rejected_records")]
+    subgraph Sources
+        SF[Supplier CSV files]
+        OF[Order CSV file]
+        API[Stock feed over HTTP]
+    end
+    subgraph Pipelines
+        SP[Supplier Product]
+        CO[Customer Orders]
+        INV[Inventory]
+    end
+    subgraph PostgreSQL
+        WH[("warehouse<br/>dimensions and facts")]
+        OP[("operational<br/>runs, rejects, quality results")]
+    end
+    SF --> SP --> WH
+    OF --> CO --> WH
+    API --> INV --> WH
+    SP --> OP
     CO --> OP
     INV --> OP
+    WH --> DQ[Data-quality checks]
+    DQ --> OP
+    AF{{"Airflow: agpp_daily"}} -. runs .-> SP
+    AF -. runs .-> CO
+    AF -. runs .-> INV
+    AF -. runs .-> DQ
 ```
-- **Isolation.** Supplier Product processes each supplier independently; Customer Orders processes one file per run; one
-  failing supplier never stops the others.
-- **Atomic loading.** One transaction per supplier; a failure leaves no
-  half-written data.
-- **Idempotent.** Running the pipeline again on the same files writes nothing,
-  and an older file never overwrites newer data.
-- **Observable.** Every run is recorded with its per-supplier result, and
-  every rejected row is stored with its source line and reasons.
-- **Late reference data.** An order line whose product is not in the catalog yet is loaded against the unknown product and corrected on the next run.
-- **Three source kinds.** Supplier CSV files, an order CSV file and a paginated JSON
-  feed over HTTP share the same extraction contract, validation shape and loader rules.
+
+The warehouse is a small star schema. Orders and inventory both join to the product
+dimension that the Supplier Product pipeline owns, but no pipeline imports another:
+they meet only in the data.
 
 ```mermaid
 erDiagram
@@ -66,8 +76,85 @@ erDiagram
     dim_date ||--o{ fact_inventory_snapshot : date_key
 ```
 
-The reasoning behind each choice is in the
-[architecture decision records](docs/adr/README.md).
+### The daily workflow
+
+```mermaid
+flowchart LR
+    M[migrate] --> SP[run-supplier-product]
+    SP --> CO[run-customer-orders]
+    SP --> INV[run-inventory]
+    CO --> DQ[check-data-quality]
+    INV --> DQ
+```
+
+Orders and inventory run in parallel after the supplier products. If one pipeline fails,
+nothing half-written reaches the warehouse, and the quality task still runs (it is
+configured to run even after a failure) and reports it.
+
+## Engineering highlights
+
+| Concern | What was done | Decision |
+|---|---|---|
+| Idempotent loads | Only changed rows are written; a rerun writes nothing and older data never overwrites newer | [ADR-0014](docs/adr/0014-loading-design.md) |
+| Late reference data | Unknown products load against an unknown member and heal on a later run | [ADR-0009](docs/adr/0009-warehouse-modeling-conventions.md) |
+| Validation | Schema, parsing, business rules and duplicate checks, a quality gate, rejects stored with reasons | [ADR-0012](docs/adr/0012-validation-design.md) |
+| Configuration | Layered YAML plus environment variables; secrets never in code or YAML | [ADR-0005](docs/adr/0005-configuration-first-and-environment-variables.md) |
+| Architecture enforced | `import-linter` contracts keep layers and pipeline independence; shared code only after a second user | [ADR-0017](docs/adr/0017-shared-building-blocks.md) |
+| Quality gates | pytest (620 unit tests, 85% branch coverage), ruff, strict mypy, import-linter, all required in CI | [ADR-0002](docs/adr/0002-quality-gates-and-ci.md) |
+| Real-database tests | 193 integration tests against PostgreSQL and a real HTTP server, in their own CI job | [ADR-0003](docs/adr/0003-testing-strategy.md) |
+| Containers | Multi-stage, non-root image; Docker Compose for the database and a mock stock feed | [ADR-0015](docs/adr/0015-containerization.md) |
+| Orchestration | Airflow kept out of the project's dependencies; tasks run the same CLI in the same image | [ADR-0019](docs/adr/0019-orchestration-with-airflow.md) |
+| Data quality | Checks are SQL in configuration, run read-only, with history and a current-state view | [ADR-0020](docs/adr/0020-data-quality-metrics.md) |
+
+## Quick start
+
+You need Docker, [uv](https://docs.astral.sh/uv/) and Python 3.12.
+
+```bash
+git clone https://github.com/yaya-soumah/agpp-data-platform.git
+cd agpp-data-platform
+uv sync
+cp .env_example .env                    # then set the POSTGRES_* values
+docker compose up -d                    # PostgreSQL
+uv run agpp migrate
+uv run agpp generate-sample-data --rows 100
+uv run agpp run-supplier-product
+uv run agpp generate-sample-orders --lines 300
+uv run agpp run-customer-orders
+uv run agpp serve-sample-inventory      # in a second terminal, leave it running
+uv run agpp run-inventory
+uv run agpp check-data-quality
+```
+
+Run any pipeline command a second time and it changes nothing. To see the daily
+workflow in Airflow, follow [`orchestration/airflow/`](orchestration/airflow/README.md).
+
+## Tech stack
+
+Python 3.12 and [uv](https://docs.astral.sh/uv/), Pydantic, PostgreSQL 16 with psycopg,
+httpx, Docker and Docker Compose, Apache Airflow 3.4, pytest, ruff, mypy, import-linter,
+pre-commit and GitHub Actions.
+
+## Status and what comes next
+
+All three pipelines, the orchestration and the quality layer are complete and tested. Known
+limits, stated plainly:
+
+- The data is synthetic; thresholds in the quality catalog are tuned for it.
+- Supplier Product reads CSV files only. An API source would exercise its extractor registry.
+- The CLI takes no date argument, so the DAG cannot backfill by logical date
+  ([ADR-0019](docs/adr/0019-orchestration-with-airflow.md)).
+- Secrets come from environment variables; a secrets backend belongs to a real deployment.
+- The Airflow stack is for local use. Spark is not used because these volumes do not need
+  it; it would be evaluated when they do.
+
+Progress and decisions are in the [pull request history](https://github.com/yaya-soumah/agpp-data-platform/pulls?q=is%3Apr+is%3Aclosed)
+and the [ADR index](docs/adr/README.md).
+
+---
+
+The rest of this document is reference material: setup, configuration and per-pipeline
+instructions.
 
 ## Requirements
 
@@ -360,3 +447,7 @@ uv run pre-commit install
 
 - [Architecture decision records](docs/adr/)
 - [Orchestration with Airflow](orchestration/airflow/README.md)
+
+## License
+
+Released under the [MIT License](LICENSE).
